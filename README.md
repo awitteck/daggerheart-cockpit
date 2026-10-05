@@ -124,9 +124,9 @@ The Playwright layout check measures equal navigation button dimensions and labe
 overflow in German and English at narrow and wide widths. It requires Chromium's
 system libraries; use a supported Playwright environment for development.
 
-This version targets v14 but has **not been verified inside a running Foundry
-installation**. The manifest intentionally omits a `verified` version. Before
-using it for a live campaign, check in a disposable world:
+The manifest marks Foundry v14 as verified based on user testing in a running
+installation. Automated checks do not replace testing every workflow in Foundry.
+Before using it for a live campaign, check in a disposable world:
 
 1. Open via settings, shortcut and macro; create a session and a thread.
 2. Save, reload the browser and confirm notes, events and links survive.
