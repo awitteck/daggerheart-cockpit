@@ -1,0 +1,61 @@
+<div class="dhc-layout">
+  <aside class="dhc-sidebar">
+    <h2>{{localize "DHC.session"}}</h2>
+    {{#each sessions}}
+      <button type="button" data-action="notesSelect" data-id="{{id}}" aria-pressed="{{selected}}">{{name}}</button>
+    {{/each}}
+    <button type="button" data-action="notesRefresh">{{localize "DHC.reloadPlayerNotes"}}</button>
+  </aside>
+  <main class="dhc-main">
+    <h2>{{localize "DHC.campaignBook"}}</h2>
+    <p class="dhc-warning">{{localize "DHC.playerNotesWarning"}}</p>
+    {{#if own}}
+      <p data-save-status role="status" aria-live="polite"></p>
+      {{#if stale}}<p class="dhc-warning">{{localize "DHC.conflict"}}</p>{{/if}}
+      <section class="dhc-card">
+        <h3>{{localize "DHC.bookEditor"}}</h3>
+        <input type="hidden" name="bookId" data-player-draft="bookId">
+        <label>{{localize "DHC.bookTitle"}}<input name="bookTitle" data-player-draft="bookTitle"></label>
+        <label>{{localize "DHC.bookCategory"}}<select name="bookCategory" data-player-draft="bookCategory">
+          {{#each categories}}<option value="{{key}}">{{label}}</option>{{/each}}
+        </select></label>
+        <label>{{localize "DHC.bookSource"}}<select name="bookSource" data-player-draft="bookSource">
+          {{#each sources}}<option value="{{key}}">{{label}}</option>{{/each}}
+        </select></label>
+        <label>{{localize "DHC.bookText"}}<textarea name="bookText" data-player-draft="bookText" rows="5"></textarea></label>
+        <button type="button" data-action="bookSave">{{localize "DHC.bookSave"}}</button>
+        <button type="button" data-action="bookNew">{{localize "DHC.bookNew"}}</button>
+      </section>
+      <details><summary>{{localize "DHC.myPlayerNotes"}}</summary>
+        <textarea name="playerBody" data-player-draft="playerBody" rows="5">{{body}}</textarea>
+        <button type="button" data-action="notesSave">{{localize "DHC.savePlayerNotes"}}</button>
+      </details>
+      <button type="button" data-action="notesDiscard">{{localize "DHC.discardPlayerDraft"}}</button>
+    {{else}}
+      <p>{{localize "DHC.noOwnNotebook"}}</p>
+    {{/if}}
+    <h3>{{localize "DHC.campaignBook"}}</h3>
+    <p>{{localize "DHC.bookAcrossSessions"}}</p>
+    <label>{{localize "DHC.search"}}<input name="bookSearch" value="{{query}}" type="search"></label>
+    <button type="button" data-action="bookSearch">{{localize "DHC.search"}}</button>
+    {{#each groups}}
+      <section><h3>{{label}}</h3>
+        {{#each entries}}
+          <details class="dhc-card">
+            <summary>{{title}} · {{sourceLabel}}</summary>
+            <p class="dhc-hint">{{authorName}} · {{sessionName}}</p>
+            <p class="dhc-text">{{text}}</p>
+            {{#if editable}}
+              <button type="button" data-action="bookEdit" data-notebook="{{notebookId}}" data-entry="{{id}}">{{localize "DHC.bookEdit"}}</button>
+              <button type="button" data-action="bookRemove" data-notebook="{{notebookId}}" data-entry="{{id}}">{{localize "DHC.deleteBookEntry"}}</button>
+            {{/if}}
+          </details>
+        {{/each}}
+      </section>
+    {{/each}}
+    <h3>{{localize "DHC.sharedContributions"}}</h3>
+    {{#each entries}}
+      {{#if body}}<section class="dhc-card"><h4>{{authorName}}</h4><p class="dhc-text">{{body}}</p></section>{{/if}}
+    {{/each}}
+  </main>
+</div>

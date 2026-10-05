@@ -33,7 +33,7 @@ globalThis.game = {
   users: { activeGM: { id: "gm" } },
   actors: [],
   folders: [],
-  settings: { registerMenu: (id, key, options) => { Cockpit = options.type; } },
+  settings: { registerMenu: (id, key, options) => { if (key === "open") Cockpit = options.type; } },
   keybindings: { register: () => {} }
 };
 globalThis.ui = { notifications: {
@@ -107,6 +107,8 @@ function makeApp(doc) {
       if (selector === "[data-draft]") return controls.filter(control => control.dataset.draft);
       if (selector === "[data-summary-event]") return controls.filter(control => control.dataset.summaryEvent !== undefined);
       if (selector === "[data-summary-field]") return controls.filter(control => control.dataset.summaryField);
+      if (selector === "[data-summary-player]") return controls.filter(control => control.dataset.summaryPlayer);
+      if (selector === "[data-summary-book]") return controls.filter(control => control.dataset.summaryBook);
       if (selector === "[data-was-disabled]") return controls.filter(control => control.dataset.wasDisabled !== undefined);
       if (selector === "[data-card]") return [];
       if (selector === "input, textarea, select, button") return controls;
@@ -124,6 +126,12 @@ function makeApp(doc) {
       input("checkConsequences", "", { draft: "summaryConsequences", summaryField: "consequences" }, "checkbox"),
       input("checkGoals", "", { draft: "summaryGoals", summaryField: "nextGoals" }, "checkbox")
     ];
+    controls.push(...context.playerContributions.map(notes =>
+      input(`player${notes.id}`, "", { draft: `summaryPlayer:${notes.id}`, summaryPlayer: notes.id }, "checkbox")
+    ));
+    controls.push(...context.bookContributions.map(entry =>
+      input(`book${entry.key}`, "", { draft: `summaryBook:${entry.key}`, summaryBook: entry.key }, "checkbox")
+    ));
     if (context.summaryReady) controls.push(
       input("summaryName", context.summaryName, { draft: "summaryName" }),
       input("summaryBody", "", { draft: "summaryBody" })
@@ -583,14 +591,79 @@ test("thread editor groups optional fields, restores drafts and displays new not
   assert.equal(thread.flags[ID].record.intervention, "Rescue may cost time");
   await restored.action("select", { id: doc.id });
   const { document: cards } = parseHTML(`<html><body>${template(restored.context)}</body></html>`);
-  assert.match(cards.querySelector(".dhc-card").textContent, /Hidden traps/);
-  assert.match(cards.querySelector(".dhc-card").textContent, /Instinct or another sensible approach/);
-  assert.match(cards.querySelector(".dhc-card").textContent, /Rescue may cost time/);
+  assert.match(cards.querySelector("[data-card]").textContent, /Hidden traps/);
+  assert.match(cards.querySelector("[data-card]").textContent, /Instinct or another sensible approach/);
+  assert.match(cards.querySelector("[data-card]").textContent, /Rescue may cost time/);
   assert.equal(cards.querySelectorAll(".dhc-thread-background").length, 0);
   thread.flags[ID].record.facts = "Established";
   const context = await restored._prepareContext();
   const { document: populated } = parseHTML(`<html><body>${template(context)}</body></html>`);
   assert.equal(populated.querySelector(".dhc-thread-background").hasAttribute("open"), false);
+});
+
+test("player contributions enter a reviewed summary only when explicitly selected", async () => {
+  const { app, doc } = setup();
+  const notebook = document({
+    name: "Player", ownership: { default: 2, player: 3 },
+    flags: { [ID]: { playerNotes: {
+      version: 1, revision: 1, sessionId: doc.id, sessionName: doc.name,
+      userId: "player", authorName: "Player", body: "We suspect the captain"
+    } } },
+    pages: [{ text: { content: "Player text" } }]
+  });
+  await app.render();
+  await quiet(() => app.action("previewSummary"));
+  assert.equal(errors.at(-1), "DHC.selectSummary");
+  app.control(`player${notebook.id}`).checked = true;
+  await app.action("previewSummary");
+  assert.equal(app.control("summaryBody").value, "Player\nWe suspect the captain");
+  assert.equal(doc.flags[ID].record.facts, undefined);
+  assert.equal(doc.flags[ID].record.events.length, 0);
+});
+
+test("campaign book summary selections preserve provenance and do not import facts", async () => {
+  const { app, doc } = setup();
+  const notebook = document({
+    name: "Book", flags: { [ID]: { playerNotes: {
+      version: 2, revision: 0, sessionId: doc.id, sessionName: doc.name,
+      userId: "player", authorName: "Player", body: "",
+      entries: [{ id: "entry", category: "person", source: "theory", title: "Captain",
+        text: "Might work with the orcs", updated: "now" }]
+    } } },
+    pages: [{ text: { content: "" } }]
+  });
+  await app.render();
+  assert.equal(app.context.bookContributions[0].title, "Captain");
+  assert.equal(app.context.bookContributions[0].source, "DHC.source_theory");
+  app.control(`book${notebook.id}:entry`).checked = true;
+  await app.action("previewSummary");
+  assert.match(app.control("summaryBody").value, /Player — Captain \(DHC.source_theory\)/);
+  assert.equal(doc.flags[ID].record.events.length, 0);
+});
+
+test("GM enabling provisions only public notebooks and canceled enabling creates nothing", async () => {
+  const { app, doc } = setup();
+  const originalUsers = game.users;
+  const users = [{ id: "gm", isGM: true, name: "GM" }, { id: "player", isGM: false, name: "Player" }];
+  users.activeGM = { id: "gm" };
+  game.users = users;
+  doc.flags[ID].record.escalations = "Private threat";
+  try {
+    await app.render();
+    confirmation = false;
+    await app.action("enablePlayerNotes");
+    assert.equal(docs.length, 1);
+    confirmation = true;
+    await app.action("enablePlayerNotes");
+    assert.equal(docs.length, 2);
+    assert.deepEqual(docs[1].ownership, { default: 2, player: 3 });
+    assert.equal(docs[1].flags[ID].record, undefined);
+    assert.doesNotMatch(JSON.stringify(docs[1]), /Private threat/);
+    await app.action("enablePlayerNotes");
+    assert.equal(docs.length, 2);
+  } finally {
+    game.users = originalUsers;
+  }
 });
 
 test("metadata and translation keys cover both languages and all note fields", async () => {
@@ -601,14 +674,20 @@ test("metadata and translation keys cover both languages and all note fields", a
   for (const path of [...manifest.esmodules, ...manifest.styles, ...manifest.languages.map(lang => lang.path)]) {
     assert.ok((await readFile(new URL(`../${path}`, import.meta.url))).length > 0);
   }
-  const source = await readFile(new URL("../scripts/main.mjs", import.meta.url), "utf8");
-  const template = await readFile(new URL("../templates/cockpit.hbs", import.meta.url), "utf8");
+  const source = (await Promise.all(["main.mjs", "player-notes.mjs", "player-notes-ui.mjs"].map(file =>
+    readFile(new URL(`../scripts/${file}`, import.meta.url), "utf8")
+  ))).join("\n");
+  const template = (await Promise.all(["cockpit.hbs", "player-notes.hbs"].map(file =>
+    readFile(new URL(`../templates/${file}`, import.meta.url), "utf8")
+  ))).join("\n");
   const keys = [
     ...Array.from(source.matchAll(/\bt\("([^"]+)"\)/g), match => match[1]),
     ...Array.from((source + template).matchAll(/DHC\.([A-Za-z]+)/g), match => match[1]),
     ...SESSION_FIELDS, ...THREAD_FIELDS, "prep", "play", "after",
     "threadBackground", "threadOptions", "threadDevelopments",
-    "challengesHint", "approachesHint", "interventionHint"
+    "challengesHint", "approachesHint", "interventionHint",
+    "book_person", "book_place", "book_clue", "book_agreement",
+    "source_observed", "source_reported", "source_theory"
   ];
   const de = JSON.parse(await readFile(new URL("../lang/de.json", import.meta.url), "utf8")).DHC;
   const en = JSON.parse(await readFile(new URL("../lang/en.json", import.meta.url), "utf8")).DHC;

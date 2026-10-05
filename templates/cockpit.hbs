@@ -84,6 +84,19 @@
         {{/each}}
       </section>
       {{#if isSession}}
+        <details class="dhc-card">
+          <summary>{{localize "DHC.playerNotes"}}</summary>
+          <p>{{localize "DHC.playerNotesWarning"}}</p>
+          {{#if writer}}<button type="button" data-action="enablePlayerNotes">{{localize "DHC.enablePlayerNotes"}}</button>{{/if}}
+          <button type="button" data-action="openPlayerNotes">{{localize "DHC.openPlayerNotes"}}</button>
+          <button type="button" data-action="refreshPlayerNotes">{{localize "DHC.reloadPlayerNotes"}}</button>
+          {{#each playerContributions}}
+            <h4>{{authorName}}</h4><p class="dhc-text">{{body}}</p>
+          {{/each}}
+          {{#each bookContributions}}
+            <h4>{{title}} · {{category}}</h4><p class="dhc-hint">{{authorName}} · {{source}}</p><p class="dhc-text">{{text}}</p>
+          {{/each}}
+        </details>
         <section {{#if after}}hidden{{/if}}>
           <h3>{{localize "DHC.attached"}}</h3>
           {{#each attached}}
@@ -181,6 +194,14 @@
             {{/each}}
             <label class="dhc-check"><input type="checkbox" data-summary-field="consequences" data-draft="summaryConsequences">{{localize "DHC.consequences"}}</label>
             <label class="dhc-check"><input type="checkbox" data-summary-field="nextGoals" data-draft="summaryGoals">{{localize "DHC.nextGoals"}}</label>
+            {{#each playerContributions}}
+              {{#if body}}
+                <label class="dhc-check"><input type="checkbox" data-summary-player="{{id}}" data-draft="summaryPlayer:{{id}}">{{authorName}}: {{body}}</label>
+              {{/if}}
+            {{/each}}
+            {{#each bookContributions}}
+              <label class="dhc-check"><input type="checkbox" data-summary-book="{{key}}" data-draft="summaryBook:{{key}}">{{authorName}}: {{title}} ({{source}}) — {{text}}</label>
+            {{/each}}
             <button type="button" data-action="previewSummary">{{localize "DHC.previewSummary"}}</button>
             {{#if summaryReady}}
               <label>{{localize "DHC.summaryName"}}<input name="summaryName" data-draft="summaryName" value="{{summaryName}}"></label>

@@ -3,6 +3,7 @@ import {
 } from "./model.mjs";
 import { CockpitStore } from "./store.mjs";
 import { Drafts } from "./drafts.mjs";
+import { PlayerNotes, playerNotesStore, openPlayerNotes } from "./player-notes-ui.mjs";
 
 const t = key => game.i18n.localize(`DHC.${key}`);
 const { ApplicationV2, HandlebarsApplicationMixin, DialogV2 } = foundry.applications.api;
@@ -36,7 +37,8 @@ const ACTIONS = [
   "createSession", "createThread", "select", "save", "addEvent", "toggleThread",
   "attachThread", "detachThread", "removeLink", "openLink", "spotlight", "refresh",
   "view", "search", "archives", "archive", "rename", "feature", "convertEvent",
-  "applyConversion", "previewSummary", "publishSummary", "removeEvent"
+  "applyConversion", "previewSummary", "publishSummary", "removeEvent",
+  "enablePlayerNotes", "openPlayerNotes", "refreshPlayerNotes"
 ];
 const VIEWS = ["prep", "play", "after"];
 
@@ -212,6 +214,17 @@ class Cockpit extends HandlebarsApplicationMixin(ApplicationV2) {
       conversion: this.conversion?.session === doc?.id ? this.conversion : null,
       summaryReady: this.summaryReady || Boolean(draft?.values?.summaryBody),
       summaryName: doc ? `${doc.name} — ${t("summary")}` : "",
+      playerContributions: isSession ? playerNotesStore.list(doc.id).map(notebook => {
+        const notes = playerNotesStore.read(notebook);
+        return { id: notebook.id, authorName: notes.authorName, body: notes.body };
+      }) : [],
+      bookContributions: isSession ? playerNotesStore.list(doc.id).flatMap(notebook => {
+        const notes = playerNotesStore.read(notebook);
+        return notes.entries.map(entry => ({
+          key: `${notebook.id}:${entry.id}`, authorName: notes.authorName, title: entry.title,
+          text: entry.text, source: t(`source_${entry.source}`), category: t(`book_${entry.category}`)
+        }));
+      }) : [],
       stale: Boolean(draft && record && draft.revision !== record.revision)
     };
   }
@@ -342,6 +355,18 @@ class Cockpit extends HandlebarsApplicationMixin(ApplicationV2) {
     await this.perform(async () => {
       if (action === "openLink") {
         await this.openDocument(target.dataset.uuid);
+      } else if (action === "openPlayerNotes") {
+        await openPlayerNotes();
+      } else if (action === "refreshPlayerNotes") {
+        // Re-render without discarding GM drafts.
+      } else if (action === "enablePlayerNotes") {
+        assertWriter();
+        if (store.read(this.selected).kind !== "session") throw new Error(t("selectFirst"));
+        if (!await DialogV2.confirm({
+          window: { title: t("enablePlayerNotes") }, content: `<p>${t("enablePlayerNotesWarning")}</p>`
+        })) return;
+        await playerNotesStore.enable(this.selected);
+        ui.notifications.info(t("playerNotesEnabled"));
       } else if (action === "view") {
         if (VIEWS.includes(target.dataset.view)) this.view = target.dataset.view;
       } else if (action === "select") {
@@ -536,6 +561,23 @@ class Cockpit extends HandlebarsApplicationMixin(ApplicationV2) {
     for (const input of this.element.querySelectorAll("[data-summary-field]")) {
       if (input.checked) sections.push(`${t(input.dataset.summaryField)}\n${record[input.dataset.summaryField]}`);
     }
+    for (const input of this.element.querySelectorAll("[data-summary-player]")) {
+      if (!input.checked) continue;
+      const doc = playerNotesStore.list(this.selectedId).find(doc => doc.id === input.dataset.summaryPlayer);
+      if (!doc) throw new Error(t("missing"));
+      const notes = playerNotesStore.read(doc);
+      if (notes.body.trim()) sections.push(`${notes.authorName}\n${notes.body}`);
+    }
+    for (const input of this.element.querySelectorAll("[data-summary-book]")) {
+      if (!input.checked) continue;
+      const [notebookId, entryId] = input.dataset.summaryBook.split(":");
+      const doc = playerNotesStore.list(this.selectedId).find(doc => doc.id === notebookId);
+      if (!doc) throw new Error(t("missing"));
+      const notes = playerNotesStore.read(doc);
+      const entry = notes.entries.find(entry => entry.id === entryId);
+      if (!entry) throw new Error(t("missing"));
+      sections.push(`${notes.authorName} — ${entry.title} (${t(`source_${entry.source}`)})\n${entry.text}`);
+    }
     const text = sections.join("\n\n").trim();
     if (!text) throw new Error(t("selectSummary"));
     const draft = this.draftCache.get(this.selected.uuid);
@@ -578,13 +620,22 @@ Hooks.once("init", () => {
     name: "DHC.title", label: "DHC.launch", hint: "DHC.hint",
     icon: "fa-solid fa-book-open", type: Cockpit, restricted: true
   });
+  game.settings.registerMenu(ID, "playerNotes", {
+    name: "DHC.playerNotes", label: "DHC.openPlayerNotes", hint: "DHC.playerNotesWarning",
+    icon: "fa-solid fa-pen", type: PlayerNotes, restricted: false
+  });
   game.keybindings.register(ID, "open", {
     name: "DHC.launch", restricted: true,
     editable: [{ key: "KeyK", modifiers: ["Control", "Shift"] }],
     onDown: () => { openCockpit(); return true; }
   });
+  game.keybindings.register(ID, "playerNotes", {
+    name: "DHC.openPlayerNotes",
+    editable: [{ key: "KeyN", modifiers: ["Alt", "Shift"] }],
+    onDown: () => { openPlayerNotes(); return true; }
+  });
 });
 
 Hooks.once("ready", () => {
-  game.modules.get(ID).api = { open: openCockpit };
+  game.modules.get(ID).api = { open: openCockpit, openPlayerNotes };
 });

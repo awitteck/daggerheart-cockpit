@@ -88,7 +88,7 @@ Refresh to discard the stale draft, then reapply it. Storage/quota/corrupt-draft
 errors are notified; corrupt drafts are not automatically overwritten. If local
 backup fails, closing with unsaved text asks for confirmation.
 
-Back up the world, replace the module directory with version **0.3.0**, restart
+Back up the world, replace the module directory with version **0.4.0**, restart
 Foundry and reload the browser. Existing 0.1.x and 0.2.x journal data is upgraded
 in memory when read and persisted as version 3 on its next successful save. New
 thread fields start empty; notes, links, events, spotlight, archives, highlights
@@ -96,6 +96,55 @@ and thread associations are preserved. Local drafts remain usable with their
 original revision checks. Unknown versions are
 not overwritten. After saving upgraded data, do not downgrade the module without
 restoring the pre-upgrade world backup.
+
+## Shared campaign book and player notes (0.4.0)
+
+1. As primary GM, select a session, expand **Player notes** and click
+   **Enable player notes for this session**. Confirm the visibility warning.
+   This creates a separate shared notebook JournalEntry for each non-GM user,
+   not just connected users. Enabling again adds notebooks for newly added players.
+   No private notes or linked GM documents are copied. The session name is public,
+   so use a spoiler-free name.
+2. Players open **Configure Settings → Module Settings → Player notes** or press
+   **Alt+Shift+N**. A script macro can also open it:
+
+   ```js
+   game.modules.get("daggerheart-cockpit").api.openPlayerNotes();
+   ```
+
+3. Select a session as the origin of new entries. Add a title, text, category
+   (**People/NPCs**, **Places**, **Clues/theories**, **Events/agreements**) and source
+   (**Observed**, **Reported**, **Theory**). Save the entry to share it with everyone.
+   **New entry** clears the editor after confirmation when needed. Your own saved
+   entries have edit/delete buttons; deletion requires confirmation.
+4. The campaign book lists entries from **all enabled sessions**, grouped by
+   category and sorted by title. Search covers title, text, author and session
+   name. Multiple players can write about the same NPC; their contributions
+   remain separate and attributed, rather than overwriting each other.
+5. A collapsible free-text session contribution remains available for general
+   observations and older notebook content. It is saved separately from entries.
+6. Use **Reload contributions** to fetch the latest view while retaining your
+   own draft. Notes are not automatically live-re-rendered during typing. Drafts
+   are browser-local and revision-checked; **Discard draft** explicitly discards
+   the selected notebook's unsaved editor and free-text contribution.
+7. The GM's **After the session** summary selection includes that session's
+   saved book entries and free-text contributions. Select desired items, generate
+   the editable preview, then confirm publication. Category/source labels remain
+   visible in the selection; source and author are carried into the preview.
+   No entry is automatically promoted to an established campaign fact.
+
+The player view never reads private cockpit records. Notebooks contain only a
+public session name/id, author metadata and shared text. No Actors, Scenes or
+other documents are generated from entries. All entries are public to the group,
+not suitable for secrets. Source labels describe player knowledge, not GM truth.
+
+Each notebook has default **OBSERVER** ownership and **OWNER** only for its author.
+Foundry enforces access to other players' documents; GMs retain Foundry's normal
+administrative access. Players can also access their own notebook via the native
+journal interface; direct edits to its generated page are not synchronized back
+to flags and will be replaced on the next module save. Do not give other players
+OWNER permissions on someone else's notebook. Shared notebooks are outside the
+private cockpit folder and remain readable without this module.
 
 ## Persistence and permissions
 
@@ -112,7 +161,7 @@ editor. Unknown data versions and missing managed pages are rejected rather than
 silently replaced.
 
 Linked documents keep their existing ownership. The cockpit does **not** change
-their permissions or provide a player cockpit. Published summaries are separate
+their permissions or expose the GM cockpit to players. Published summaries are separate
 journals outside the private campaign folder, with default observer ownership
 and no source flags or document associations. Publishing again creates another
 journal; edit or delete old public summaries using Foundry's journal interface.
@@ -151,6 +200,12 @@ Before using it for a live campaign, check in a disposable world:
 9. Edit the same record in two cockpit windows; confirm stale/recovered saves are
    rejected. Copy the text before using Refresh to discard a stale draft.
 10. Disable the module and check the readable journal pages.
+11. Enable player notes for a spoiler-free session. Join as two different players:
+    create entries in each category, edit/delete your own and confirm the other
+    player's notebook is read-only. Open an older session and check cross-session
+    grouping/search and draft recovery. Verify the private GM journals remain hidden.
+12. As GM, reload contributions, select one player entry and publish a reviewed
+    summary; confirm unselected text and private GM fields are absent.
 
 The module uses ApplicationV2 and HandlebarsApplicationMixin. Campaign logic and
 journal persistence are separate from the interface. It only reads character
