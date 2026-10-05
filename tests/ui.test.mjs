@@ -502,6 +502,64 @@ test("pinned links identify every supported document type despite identical name
   assert.equal(dom.querySelector('[data-action=openLink][data-uuid="Scene.deleted"]'), null);
 });
 
+test("deleting events requires confirmation, preserves quick notes and removes readable journal text", async () => {
+  const { app, doc } = setup();
+  doc.flags[ID].record.events = [{ time: "now", text: "Remove me" }, { time: "now", text: "Keep me" }];
+  await app.render();
+  app.control("event").value = "Pending";
+  confirmation = false;
+  await app.action("removeEvent", { index: "0" });
+  assert.equal(doc.updates.length, 0);
+  confirmation = true;
+  await app.action("removeEvent", { index: "0" });
+  assert.deepEqual(doc.flags[ID].record.events.map(event => event.text), ["Keep me"]);
+  assert.doesNotMatch(doc.pages[0].text.content, /Remove me/);
+  assert.equal(app.control("event").value, "Pending");
+});
+
+test("deletion remaps summary selections and conversion indexes without replacing preview text", async () => {
+  const { app, doc } = setup();
+  doc.flags[ID].record.events = [
+    { time: "now", text: "First" }, { time: "now", text: "Second" }, { time: "now", text: "Third" }
+  ];
+  await app.render();
+  await app.action("convertEvent", { index: "2" });
+  app.control("check2").checked = true;
+  await app.action("previewSummary");
+  app.control("conversionText").value = "Reviewed third";
+  app.control("summaryBody").value = "Independent preview";
+  await app.action("removeEvent", { index: "0" });
+  assert.equal(app.conversion.index, 1);
+  assert.equal(app.control("conversionText").value, "Reviewed third");
+  assert.equal(app.control("check1").checked, true);
+  assert.equal(app.control("check0").checked, false);
+  assert.equal(app.control("summaryBody").value, "Independent preview");
+  await app.action("removeEvent", { index: "1" });
+  assert.equal(app.conversion, null);
+  assert.equal(app.control("conversionText"), undefined);
+  assert.equal(app.control("summaryBody").value, "Independent preview");
+});
+
+test("stale, failed, invalid and unauthorized event deletion leaves events intact", async () => {
+  const { app, doc } = setup();
+  doc.flags[ID].record.events = [{ time: "now", text: "Keep" }];
+  await app.render();
+  await quiet(() => app.action("removeEvent", { index: "-1" }));
+  assert.equal(errors.at(-1), "DHC.missingEvent");
+  doc.fail = true;
+  await quiet(() => app.action("removeEvent", { index: "0" }));
+  assert.equal(doc.flags[ID].record.events.length, 1);
+  doc.fail = false;
+  doc.flags[ID].record.revision++;
+  await quiet(() => app.action("removeEvent", { index: "0" }));
+  assert.equal(errors.at(-1), "DHC.conflict");
+  assert.equal(doc.flags[ID].record.events.length, 1);
+  game.users.activeGM.id = "other";
+  await quiet(() => app.action("removeEvent", { index: "0" }));
+  assert.equal(errors.at(-1), "DHC.primaryGM");
+  assert.equal(doc.flags[ID].record.events.length, 1);
+});
+
 test("metadata and translation keys cover both languages and all note fields", async () => {
   const manifest = JSON.parse(await readFile(new URL("../module.json", import.meta.url), "utf8"));
   assert.equal(manifest.id, ID);

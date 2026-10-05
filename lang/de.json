@@ -44,6 +44,8 @@
     "events": "Ereignisprotokoll",
     "quickNote": "Schnellnotiz",
     "addEvent": "Ereignis festhalten",
+    "removeEvent": "Ereignis löschen",
+    "removeEventWarning": "Dieses Ereignis dauerhaft löschen? Bereits übernommene Notizen, bearbeitete Zusammenfassungsvorschauen und veröffentlichte Journals bleiben unverändert.",
     "empty": "Lege links die erste Sitzung an.",
     "primaryGM": "Nur die aktive Haupt-Spielleitung kann schreiben. Andere Spielleitungen können lesen.",
     "gmOnly": "Das Cockpit ist nur für die Spielleitung.",

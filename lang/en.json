@@ -44,6 +44,8 @@
     "events": "Event log",
     "quickNote": "Quick note",
     "addEvent": "Record event",
+    "removeEvent": "Delete event",
+    "removeEventWarning": "Permanently delete this event? Previously converted notes, edited summary previews and published journals remain unchanged.",
     "empty": "Create your first session on the left.",
     "primaryGM": "Only the active primary GM can write. Other GMs can read.",
     "gmOnly": "The cockpit is for GMs only.",

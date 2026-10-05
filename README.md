@@ -40,6 +40,10 @@ Alternatively, install manually:
 - **At the table** shows pinned documents, expandable thread cards, the event
   log and manual character spotlight. Highlight important threads for today;
   highlighted cards move to the top. Resolved threads remain recognizable.
+  Delete individual events using **Delete event** and confirm the permanent
+  removal. Converted notes, edited summary previews and published summaries are
+  not deleted. Event selections and pending conversions follow the remaining
+  events rather than shifting to the wrong entry.
 - **After the session** shows consequences, feedback, next-session goals and
   the event log. Convert an event into a consequence, next goal, established
   fact on a selected thread, or a new thread. Review/edit the text and confirm.
@@ -78,7 +82,7 @@ Refresh to discard the stale draft, then reapply it. Storage/quota/corrupt-draft
 errors are notified; corrupt drafts are not automatically overwritten. If local
 backup fails, closing with unsaved text asks for confirmation.
 
-Back up the world, replace the module directory with version **0.2.1**, restart
+Back up the world, replace the module directory with version **0.2.2**, restart
 Foundry and reload the browser. Existing 0.1.0 journal data is upgraded in memory
 when read and persisted as version 2 on its next successful save. Notes, links,
 events, spotlight and thread associations are preserved. Unknown versions are

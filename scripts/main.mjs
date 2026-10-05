@@ -36,7 +36,7 @@ const ACTIONS = [
   "createSession", "createThread", "select", "save", "addEvent", "toggleThread",
   "attachThread", "detachThread", "removeLink", "openLink", "spotlight", "refresh",
   "view", "search", "archives", "archive", "rename", "feature", "convertEvent",
-  "applyConversion", "previewSummary", "publishSummary"
+  "applyConversion", "previewSummary", "publishSummary", "removeEvent"
 ];
 const VIEWS = ["prep", "play", "after"];
 
@@ -378,6 +378,41 @@ class Cockpit extends HandlebarsApplicationMixin(ApplicationV2) {
         this.view = "after";
       } else if (action === "applyConversion") {
         await this.convert();
+      } else if (action === "removeEvent") {
+        assertWriter();
+        const index = Number(target.dataset.index);
+        if (!Number.isSafeInteger(index) || index < 0 || !store.read(this.selected).events?.[index]) {
+          throw new Error(t("missingEvent"));
+        }
+        if (!await DialogV2.confirm({
+          window: { title: t("removeEvent") }, content: `<p>${t("removeEventWarning")}</p>`
+        })) return;
+        await this.saveCurrent(record => {
+          if (!record.events[index]) throw new Error(t("missingEvent"));
+          record.events.splice(index, 1);
+          return record;
+        });
+        const draft = this.draftCache.get(this.selected.uuid);
+        if (draft) {
+          const selections = Object.entries(draft.values).filter(([key]) => key.startsWith("summaryEvent:"));
+          for (const [key] of selections) delete draft.values[key];
+          for (const [key, value] of selections) {
+            const oldIndex = Number(key.slice("summaryEvent:".length));
+            if (oldIndex !== index) draft.values[`summaryEvent:${oldIndex > index ? oldIndex - 1 : oldIndex}`] = value;
+          }
+          if (this.conversion?.session === this.selectedId) {
+            if (this.conversion.index === index) {
+              this.conversion = null;
+              for (const key of ["conversionIndex", "conversionText", "conversionName", "conversionType", "factTarget"]) {
+                delete draft.values[key];
+              }
+            } else if (this.conversion.index > index) {
+              this.conversion.index--;
+              draft.values.conversionIndex = String(this.conversion.index);
+            }
+          }
+          this.persistCached(this.selected);
+        }
       } else if (action === "previewSummary") {
         if (this.element.querySelector("[name=summaryBody]")?.value.trim() &&
             !await DialogV2.confirm({

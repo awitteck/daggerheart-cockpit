@@ -122,7 +122,10 @@
           {{/if}}
           <ol class="dhc-events">{{#each record.events}}
             <li><time>{{time}}</time><p>{{text}}</p>
-              {{#if ../writer}}<button type="button" data-action="convertEvent" data-index="{{@index}}">{{localize "DHC.convertEvent"}}</button>{{/if}}
+              {{#if ../writer}}
+                <button type="button" data-action="convertEvent" data-index="{{@index}}">{{localize "DHC.convertEvent"}}</button>
+                <button type="button" data-action="removeEvent" data-index="{{@index}}">{{localize "DHC.removeEvent"}}</button>
+              {{/if}}
             </li>
           {{/each}}</ol>
         </section>
