@@ -471,6 +471,8 @@ test("actual template escapes notes and offers no publication controls to other 
 test("metadata and translation keys cover both languages and all note fields", async () => {
   const manifest = JSON.parse(await readFile(new URL("../module.json", import.meta.url), "utf8"));
   assert.equal(manifest.id, ID);
+  assert.equal(manifest.manifest, "https://github.com/awitteck/daggerheart-cockpit/releases/latest/download/module.json");
+  assert.equal(manifest.download, `https://github.com/awitteck/daggerheart-cockpit/releases/download/v${manifest.version}/daggerheart-cockpit-${manifest.version}.zip`);
   for (const path of [...manifest.esmodules, ...manifest.styles, ...manifest.languages.map(lang => lang.path)]) {
     assert.ok((await readFile(new URL(`../${path}`, import.meta.url))).length > 0);
   }

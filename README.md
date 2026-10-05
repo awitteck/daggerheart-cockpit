@@ -6,6 +6,17 @@ The interface supports German and English.
 
 ## Install
 
+In Foundry's **Install Module → Manifest URL**, paste:
+
+```text
+https://github.com/awitteck/daggerheart-cockpit/releases/latest/download/module.json
+```
+
+GitHub `blob/.../module.json` addresses are HTML pages, not JSON manifests.
+The release manifest includes the downloadable module ZIP.
+
+Alternatively, install manually:
+
 1. Copy this entire directory to `Data/modules/daggerheart-cockpit`.
 2. Restart Foundry, open your Daggerheart world and enable **Daggerheart Cockpit**
    in Manage Modules.
