@@ -33,7 +33,7 @@
       <p data-save-status role="status" aria-live="polite"></p>
       {{#if stale}}<p class="dhc-warning">{{localize "DHC.conflict"}}</p>{{/if}}
       {{#if isSession}}
-        <nav class="dhc-row" aria-label="{{localize 'DHC.views'}}">
+        <nav class="dhc-views" aria-label="{{localize 'DHC.views'}}">
           {{#each views}}
             <button type="button" data-action="view" data-view="{{key}}" aria-pressed="{{active}}">{{label}}</button>
           {{/each}}
@@ -63,7 +63,9 @@
         {{#each links}}
           <div class="dhc-row">
             {{#if missing}}<span class="dhc-warning">{{name}}</span>{{else}}
-              <button type="button" data-action="openLink" data-uuid="{{uuid}}">{{name}}</button>
+              <button class="dhc-document" type="button" data-action="openLink" data-uuid="{{uuid}}">
+                <i class="{{icon}}" aria-hidden="true"></i><span class="dhc-document-name">{{name}}</span><span class="dhc-document-type">{{typeLabel}}</span>
+              </button>
             {{/if}}
             {{#if ../writer}}<button type="button" data-action="removeLink" data-uuid="{{uuid}}">{{localize "DHC.remove"}}</button>{{/if}}
           </div>
@@ -79,7 +81,9 @@
                 {{#each fields}}<h4>{{label}}</h4><p class="dhc-text">{{value}}</p>{{/each}}
                 {{#each links}}
                   {{#if missing}}<p class="dhc-warning">{{name}}</p>{{else}}
-                    <button type="button" data-action="openLink" data-uuid="{{uuid}}">{{name}}</button>
+                    <button class="dhc-document" type="button" data-action="openLink" data-uuid="{{uuid}}">
+                      <i class="{{icon}}" aria-hidden="true"></i><span class="dhc-document-name">{{name}}</span><span class="dhc-document-type">{{typeLabel}}</span>
+                    </button>
                   {{/if}}
                 {{/each}}
                 <div class="dhc-row">

@@ -3,6 +3,17 @@ export const VERSION = 2;
 export const SESSION_FIELDS = ["opening", "situations", "clues", "escalations", "questions", "consequences", "feedback", "nextGoals"];
 export const THREAD_FIELDS = ["facts", "motives", "development"];
 
+export function documentPresentation(doc) {
+  const types = {
+    Actor: { typeKey: "documentActor", icon: "fa-solid fa-user" },
+    JournalEntry: { typeKey: "documentJournal", icon: "fa-solid fa-book-open" },
+    JournalEntryPage: { typeKey: "documentPage", icon: "fa-solid fa-file-lines" },
+    Scene: { typeKey: "documentScene", icon: "fa-solid fa-map" },
+    RollTable: { typeKey: "documentTable", icon: "fa-solid fa-dice" }
+  };
+  return types[doc.documentName] ?? { typeKey: "documentOther", icon: "fa-solid fa-file" };
+}
+
 export function escapeHTML(value) {
   return String(value).replace(/[&<>"']/g, char => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"

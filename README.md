@@ -34,7 +34,9 @@ Alternatively, install manually:
 - Create campaign threads separately: established facts, people and motives,
   and possible developments. Toggle a thread between open and resolved.
 - Select your session and attach relevant threads. Drag Actors, Journals,
-  Scenes or RollTables from the sidebar to pin their document links.
+  Scenes or RollTables from the sidebar to pin their document links. Links show
+  a document-type icon and label (Actor, Journal, Journal page, Scene or Roll table),
+  including inside thread cards, so identical names remain distinguishable.
 - **At the table** shows pinned documents, expandable thread cards, the event
   log and manual character spotlight. Highlight important threads for today;
   highlighted cards move to the top. Resolved threads remain recognizable.
@@ -76,7 +78,7 @@ Refresh to discard the stale draft, then reapply it. Storage/quota/corrupt-draft
 errors are notified; corrupt drafts are not automatically overwritten. If local
 backup fails, closing with unsaved text asks for confirmation.
 
-Back up the world, replace the module directory with version **0.2.0**, restart
+Back up the world, replace the module directory with version **0.2.1**, restart
 Foundry and reload the browser. Existing 0.1.0 journal data is upgraded in memory
 when read and persisted as version 2 on its next successful save. Notes, links,
 events, spotlight and thread associations are preserved. Unknown versions are
@@ -109,10 +111,14 @@ encryption. Avoid shared browser profiles for private campaign material.
 
 ## Development and verification
 
-Run `npm ci` and `npm test` (Node.js 18+). Development-only Handlebars and
+Run `npm ci`, `npx playwright install chromium`, and `npm test` (Node.js 18+). Development-only Handlebars and
 LinkeDOM dependencies validate the actual template and DOM interaction alongside
 in-memory Foundry persistence tests. Installed modules have no runtime npm
 dependencies and require no build.
+
+The Playwright layout check measures equal navigation button dimensions and label
+overflow in German and English at narrow and wide widths. It requires Chromium's
+system libraries; use a supported Playwright environment for development.
 
 This version targets v14 but has **not been verified inside a running Foundry
 installation**. The manifest intentionally omits a `verified` version. Before

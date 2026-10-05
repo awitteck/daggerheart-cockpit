@@ -468,6 +468,40 @@ test("actual template escapes notes and offers no publication controls to other 
   assert.ok(document.querySelector("fieldset").hasAttribute("disabled"));
 });
 
+test("pinned links identify every supported document type despite identical names", async () => {
+  const { app, doc } = setup();
+  const types = {
+    Actor: "documentActor", JournalEntry: "documentJournal", JournalEntryPage: "documentPage",
+    Scene: "documentScene", RollTable: "documentTable"
+  };
+  for (const documentName of Object.keys(types)) {
+    const linked = {
+      id: documentName, uuid: `${documentName}.linked`, documentName, name: "Same name",
+      getFlag: () => undefined
+    };
+    docs.push(linked);
+    doc.flags[ID].record.links.push(linked.uuid);
+  }
+  const thread = document({
+    name: "Thread", flags: { [ID]: { record: {
+      ...createRecord("thread", "Thread"), links: ["Scene.linked"]
+    } } },
+    pages: [{ flags: { [ID]: { managed: true } }, text: { content: "" } }]
+  });
+  doc.flags[ID].record.threads.push(thread.uuid);
+  doc.flags[ID].record.links.push("Scene.deleted");
+  const context = await app._prepareContext();
+  const { document: dom } = parseHTML(`<html><body>${template(context)}</body></html>`);
+  for (const [type, key] of Object.entries(types)) {
+    const button = dom.querySelector(`[data-action=openLink][data-uuid="${type}.linked"]`);
+    assert.equal(button.querySelector(".dhc-document-name").textContent, "Same name");
+    assert.equal(button.querySelector(".dhc-document-type").textContent, `DHC.${key}`);
+    assert.equal(button.querySelector("i").getAttribute("aria-hidden"), "true");
+  }
+  assert.equal(dom.querySelectorAll('[data-uuid="Scene.linked"] .dhc-document-type').length, 2);
+  assert.equal(dom.querySelector('[data-action=openLink][data-uuid="Scene.deleted"]'), null);
+});
+
 test("metadata and translation keys cover both languages and all note fields", async () => {
   const manifest = JSON.parse(await readFile(new URL("../module.json", import.meta.url), "utf8"));
   assert.equal(manifest.id, ID);

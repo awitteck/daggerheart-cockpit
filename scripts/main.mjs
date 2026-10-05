@@ -1,5 +1,5 @@
 import {
-  ID, SESSION_FIELDS, THREAD_FIELDS, updateFields, matchesSearch, appendNote
+  ID, SESSION_FIELDS, THREAD_FIELDS, updateFields, matchesSearch, appendNote, documentPresentation
 } from "./model.mjs";
 import { CockpitStore } from "./store.mjs";
 import { Drafts } from "./drafts.mjs";
@@ -142,7 +142,11 @@ class Cockpit extends HandlebarsApplicationMixin(ApplicationV2) {
     const threads = store.list("thread");
     const resolve = async uuid => {
       const linked = await fromUuid(uuid);
-      return { uuid, name: linked?.name ?? `${t("missing")}: ${uuid}`, missing: !linked };
+      const presentation = linked ? documentPresentation(linked) : null;
+      return {
+        uuid, name: linked?.name ?? `${t("missing")}: ${uuid}`, missing: !linked,
+        icon: presentation?.icon, typeLabel: presentation ? t(presentation.typeKey) : ""
+      };
     };
     const visible = doc => {
       const record = store.read(doc);
