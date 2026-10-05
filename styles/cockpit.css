@@ -1,0 +1,26 @@
+.dh-cockpit .window-content { padding: 0; overflow: hidden; }
+.dh-cockpit .dhc-layout { display: grid; grid-template-columns: 210px 1fr; height: 100%; min-height: 0; }
+.dh-cockpit .dhc-sidebar, .dh-cockpit .dhc-main { padding: 16px; overflow-y: auto; min-width: 0; }
+.dh-cockpit .dhc-sidebar { border-right: 1px solid var(--color-border-light-primary, #888); }
+.dh-cockpit .dhc-sidebar button { width: 100%; margin-bottom: 6px; white-space: normal; height: auto; }
+.dh-cockpit label { display: block; margin: 10px 0; font-weight: bold; }
+.dh-cockpit textarea { display: block; width: 100%; resize: vertical; font-weight: normal; }
+.dh-cockpit input { width: 100%; }
+.dh-cockpit fieldset { border: 0; padding: 0; margin: 0; }
+.dh-cockpit header, .dh-cockpit .dhc-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.dh-cockpit .dhc-row > :first-child { flex: 1; min-width: 0; white-space: normal; height: auto; }
+.dh-cockpit [aria-pressed="true"] { outline: 2px solid var(--color-warm-1, #b86f38); outline-offset: -2px; }
+.dh-cockpit .dhc-hint, .dh-cockpit time { font-size: .85em; opacity: .8; }
+.dh-cockpit .dhc-drop { border: 1px dashed currentColor; padding: 12px; }
+.dh-cockpit .dhc-events p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.dh-cockpit [hidden] { display: none !important; }
+.dh-cockpit .dhc-card { border: 1px solid var(--color-border-light-primary, #888); padding: 12px; margin: 10px 0; }
+.dh-cockpit .dhc-featured { border-left: 4px solid var(--color-warm-1, #b86f38); }
+.dh-cockpit .dhc-resolved summary { text-decoration: line-through; }
+.dh-cockpit summary { cursor: pointer; font-weight: bold; }
+.dh-cockpit .dhc-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.dh-cockpit .dhc-warning { color: var(--color-level-warning, #b86f38); overflow-wrap: anywhere; }
+.dh-cockpit .dhc-check { display: flex; align-items: flex-start; gap: 8px; font-weight: normal; }
+.dh-cockpit .dhc-check input { width: auto; flex-shrink: 0; }
+.dh-cockpit [data-save-status] { font-size: .9em; }
+.dh-cockpit .dhc-management { margin-top: 12px; }

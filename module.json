@@ -1,0 +1,16 @@
+{
+  "id": "daggerheart-cockpit",
+  "title": "Daggerheart Cockpit",
+  "description": "Private, journal-backed session preparation and campaign notes for the GM.",
+  "version": "0.2.0",
+  "url": "https://github.com/awitteck/daggerheart-cockpit",
+  "authors": [{ "name": "awitteck" }],
+  "compatibility": { "minimum": "14", "maximum": "14" },
+  "relationships": { "systems": [{ "id": "daggerheart", "type": "system" }] },
+  "esmodules": ["scripts/main.mjs"],
+  "styles": ["styles/cockpit.css"],
+  "languages": [
+    { "lang": "de", "name": "Deutsch", "path": "lang/de.json" },
+    { "lang": "en", "name": "English", "path": "lang/en.json" }
+  ]
+}

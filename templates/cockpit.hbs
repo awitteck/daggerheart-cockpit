@@ -1,0 +1,168 @@
+<div class="dhc-layout">
+  <aside class="dhc-sidebar">
+    <label>{{localize "DHC.search"}}<input name="search" type="search" value="{{query}}"></label>
+    <button type="button" data-action="search">{{localize "DHC.search"}}</button>
+    <button type="button" data-action="archives" aria-pressed="{{showArchives}}">{{localize "DHC.showArchives"}}</button>
+    <h2>{{localize "DHC.session"}}</h2>
+    {{#each sessions}}
+      <button type="button" data-action="select" data-id="{{id}}" aria-pressed="{{selected}}">
+        {{name}}{{#if archived}} · {{localize "DHC.archived"}}{{/if}}
+      </button>
+    {{/each}}
+    <h2>{{localize "DHC.thread"}}</h2>
+    {{#each threads}}
+      <button type="button" data-action="select" data-id="{{id}}">
+        {{name}} · {{status}}{{#if archived}} · {{localize "DHC.archived"}}{{/if}}
+      </button>
+    {{/each}}
+    {{#if writer}}
+      <label>{{localize "DHC.newName"}}<input name="newName" type="text"></label>
+      <button type="button" data-action="createSession">{{localize "DHC.createSession"}}</button>
+      <button type="button" data-action="createThread">{{localize "DHC.createThread"}}</button>
+    {{/if}}
+    <button type="button" data-action="refresh">{{localize "DHC.refresh"}}</button>
+  </aside>
+  <main class="dhc-main">
+    <p class="dhc-hint">{{hint}}</p>
+    {{#unless writer}}<p role="status">{{localize "DHC.primaryGM"}}</p>{{/unless}}
+    {{#if selected}}
+      <header><h2>{{selected.name}}</h2>
+        <button type="button" data-action="openLink" data-uuid="{{selected.uuid}}">{{localize "DHC.journal"}}</button>
+      </header>
+      {{#if record.archived}}<p>{{localize "DHC.archived"}}</p>{{/if}}
+      <p data-save-status role="status" aria-live="polite"></p>
+      {{#if stale}}<p class="dhc-warning">{{localize "DHC.conflict"}}</p>{{/if}}
+      {{#if isSession}}
+        <nav class="dhc-row" aria-label="{{localize 'DHC.views'}}">
+          {{#each views}}
+            <button type="button" data-action="view" data-view="{{key}}" aria-pressed="{{active}}">{{label}}</button>
+          {{/each}}
+        </nav>
+      {{/if}}
+      <fieldset {{#unless writer}}disabled{{/unless}}>
+        {{#each fields}}
+          <label {{#if hidden}}hidden{{/if}}>{{label}}
+            <textarea data-note="{{key}}" data-draft="note:{{key}}" rows="3">{{value}}</textarea>
+          </label>
+        {{/each}}
+        <button type="button" data-action="save">{{localize "DHC.save"}}</button>
+        {{#unless isSession}}
+          <p>{{localize "DHC.status"}}: {{status}}</p>
+          <button type="button" data-action="toggleThread">{{localize "DHC.toggleThread"}}</button>
+        {{/unless}}
+        <details class="dhc-management">
+          <summary>{{localize "DHC.manage"}}</summary>
+          <label>{{localize "DHC.newName"}}<input name="rename" value="{{selected.name}}"></label>
+          <button type="button" data-action="rename">{{localize "DHC.rename"}}</button>
+          <button type="button" data-action="archive">{{#if record.archived}}{{localize "DHC.unarchive"}}{{else}}{{localize "DHC.archive"}}{{/if}}</button>
+        </details>
+      </fieldset>
+      <section {{#if after}}{{#if isSession}}hidden{{/if}}{{/if}}>
+        <h3>{{localize "DHC.links"}}</h3>
+        {{#if writer}}<p class="dhc-drop">{{localize "DHC.drop"}}</p>{{/if}}
+        {{#each links}}
+          <div class="dhc-row">
+            {{#if missing}}<span class="dhc-warning">{{name}}</span>{{else}}
+              <button type="button" data-action="openLink" data-uuid="{{uuid}}">{{name}}</button>
+            {{/if}}
+            {{#if ../writer}}<button type="button" data-action="removeLink" data-uuid="{{uuid}}">{{localize "DHC.remove"}}</button>{{/if}}
+          </div>
+        {{/each}}
+      </section>
+      {{#if isSession}}
+        <section {{#if after}}hidden{{/if}}>
+          <h3>{{localize "DHC.attached"}}</h3>
+          {{#each attached}}
+            <details data-card="{{uuid}}" class="dhc-card {{#if featured}}dhc-featured{{/if}} {{#if resolved}}dhc-resolved{{/if}}" {{#if expanded}}open{{/if}}>
+              <summary>{{name}}{{#unless missing}} · {{status}}{{/unless}}{{#if archived}} · {{localize "DHC.archived"}}{{/if}}</summary>
+              {{#unless missing}}
+                {{#each fields}}<h4>{{label}}</h4><p class="dhc-text">{{value}}</p>{{/each}}
+                {{#each links}}
+                  {{#if missing}}<p class="dhc-warning">{{name}}</p>{{else}}
+                    <button type="button" data-action="openLink" data-uuid="{{uuid}}">{{name}}</button>
+                  {{/if}}
+                {{/each}}
+                <div class="dhc-row">
+                  <button type="button" data-action="select" data-id="{{id}}">{{localize "DHC.editThread"}}</button>
+                  {{#if ../writer}}
+                    <button type="button" data-action="feature" data-uuid="{{uuid}}" aria-pressed="{{featured}}">{{localize "DHC.feature"}}</button>
+                  {{/if}}
+                </div>
+              {{/unless}}
+              {{#if ../writer}}<button type="button" data-action="detachThread" data-uuid="{{uuid}}">{{localize "DHC.remove"}}</button>{{/if}}
+            </details>
+          {{/each}}
+          {{#if writer}}{{#if available.length}}
+            <div class="dhc-row">
+              <select name="thread" aria-label="{{localize 'DHC.thread'}}">
+                {{#each available}}<option value="{{uuid}}">{{name}}</option>{{/each}}
+              </select>
+              <button type="button" data-action="attachThread">{{localize "DHC.attach"}}</button>
+            </div>
+          {{/if}}{{/if}}
+        </section>
+        <section {{#unless play}}hidden{{/unless}}>
+          <h3>{{localize "DHC.spotlight"}}</h3>
+          <p>{{localize "DHC.spotlightHint"}}</p>
+          <fieldset {{#unless writer}}disabled{{/unless}}>
+            {{#each actors}}
+              <button type="button" data-action="spotlight" data-uuid="{{uuid}}" aria-pressed="{{marked}}">{{name}}</button>
+            {{/each}}
+          </fieldset>
+        </section>
+        <section {{#if prep}}hidden{{/if}}>
+          <h3>{{localize "DHC.events"}}</h3>
+          {{#if writer}}
+            <label>{{localize "DHC.quickNote"}}<textarea name="event" data-draft="event" rows="2"></textarea></label>
+            <button type="button" data-action="addEvent">{{localize "DHC.addEvent"}}</button>
+          {{/if}}
+          <ol class="dhc-events">{{#each record.events}}
+            <li><time>{{time}}</time><p>{{text}}</p>
+              {{#if ../writer}}<button type="button" data-action="convertEvent" data-index="{{@index}}">{{localize "DHC.convertEvent"}}</button>{{/if}}
+            </li>
+          {{/each}}</ol>
+        </section>
+        {{#if writer}}
+          <section {{#unless after}}hidden{{/unless}}>
+            {{#if conversion}}
+              <fieldset class="dhc-card">
+                <legend>{{localize "DHC.convertEvent"}}</legend>
+                <label>{{localize "DHC.conversionText"}}<textarea name="conversionText" data-draft="conversionText">{{conversion.text}}</textarea></label>
+                <label>{{localize "DHC.destination"}}
+                  <select name="conversionType" data-draft="conversionType">
+                    <option value="consequences">{{localize "DHC.consequences"}}</option>
+                    <option value="nextGoals">{{localize "DHC.nextGoals"}}</option>
+                    <option value="facts">{{localize "DHC.facts"}}</option>
+                    <option value="newThread">{{localize "DHC.createThread"}}</option>
+                  </select>
+                </label>
+                <label>{{localize "DHC.factTarget"}}
+                  <select name="factTarget" data-draft="factTarget">
+                    {{#each factTargets}}<option value="{{uuid}}">{{name}}</option>{{/each}}
+                  </select>
+                </label>
+                <label>{{localize "DHC.conversionName"}}<input name="conversionName" data-draft="conversionName"></label>
+                <button type="button" data-action="applyConversion">{{localize "DHC.applyConversion"}}</button>
+              </fieldset>
+            {{/if}}
+            <h3>{{localize "DHC.summary"}}</h3>
+            <p>{{localize "DHC.summaryHint"}}</p>
+            {{#each record.events}}
+              <label class="dhc-check"><input type="checkbox" data-summary-event="{{@index}}" data-draft="summaryEvent:{{@index}}">{{text}}</label>
+            {{/each}}
+            <label class="dhc-check"><input type="checkbox" data-summary-field="consequences" data-draft="summaryConsequences">{{localize "DHC.consequences"}}</label>
+            <label class="dhc-check"><input type="checkbox" data-summary-field="nextGoals" data-draft="summaryGoals">{{localize "DHC.nextGoals"}}</label>
+            <button type="button" data-action="previewSummary">{{localize "DHC.previewSummary"}}</button>
+            {{#if summaryReady}}
+              <label>{{localize "DHC.summaryName"}}<input name="summaryName" data-draft="summaryName" value="{{summaryName}}"></label>
+              <label>{{localize "DHC.summaryPreview"}}<textarea name="summaryBody" data-draft="summaryBody" rows="8"></textarea></label>
+              <button type="button" data-action="publishSummary">{{localize "DHC.publishSummary"}}</button>
+            {{/if}}
+          </section>
+        {{/if}}
+      {{/if}}
+    {{else}}
+      <p>{{localize "DHC.empty"}}</p>
+    {{/if}}
+  </main>
+</div>
