@@ -1,4 +1,4 @@
-import { ID, createRecord, validateRecord, upgradeRecord, journalHTML, publicHTML } from "./model.mjs";
+import { ID, THREAD_FIELDS, createRecord, validateRecord, upgradeRecord, journalHTML, publicHTML } from "./model.mjs";
 
 export class CockpitStore {
   #pending = Promise.resolve();
@@ -27,7 +27,7 @@ export class CockpitStore {
   create(kind, name, previous = null, initial = {}) {
     return this.#write(async () => {
       const record = createRecord(kind, name, previous ? this.read(previous) : null);
-      for (const field of ["facts", "motives", "development"]) {
+      for (const field of THREAD_FIELDS) {
         if (kind === "thread" && Object.hasOwn(initial, field)) record[field] = initial[field];
       }
       validateRecord(record);

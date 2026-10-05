@@ -29,3 +29,5 @@
 .dh-cockpit .dhc-document { display: flex; align-items: center; gap: 8px; width: 100%; height: auto; min-height: 36px; padding: 6px 10px; white-space: normal; text-align: left; }
 .dh-cockpit .dhc-document-name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .dh-cockpit .dhc-document-type { flex-shrink: 0; font-size: .8em; border: 1px solid currentColor; border-radius: 4px; padding: 1px 6px; }
+.dh-cockpit .dhc-thread-group + .dhc-thread-group { border-top: 1px solid var(--color-border-light-primary, #888); margin-top: 18px; padding-top: 6px; }
+.dh-cockpit .dhc-thread-background { margin: 12px 0; }

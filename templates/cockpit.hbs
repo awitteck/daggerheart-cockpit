@@ -40,11 +40,23 @@
         </nav>
       {{/if}}
       <fieldset {{#unless writer}}disabled{{/unless}}>
+        {{#if isSession}}
         {{#each fields}}
           <label {{#if hidden}}hidden{{/if}}>{{label}}
             <textarea data-note="{{key}}" data-draft="note:{{key}}" rows="3">{{value}}</textarea>
           </label>
         {{/each}}
+        {{else}}
+          {{#each threadGroups}}
+            <section class="dhc-thread-group">
+              <h3>{{label}}</h3>
+              {{#each fields}}
+                <label>{{label}}<textarea data-note="{{key}}" data-draft="note:{{key}}" rows="3">{{value}}</textarea></label>
+                {{#if hint}}<p class="dhc-hint">{{hint}}</p>{{/if}}
+              {{/each}}
+            </section>
+          {{/each}}
+        {{/if}}
         <button type="button" data-action="save">{{localize "DHC.save"}}</button>
         {{#unless isSession}}
           <p>{{localize "DHC.status"}}: {{status}}</p>
@@ -78,7 +90,17 @@
             <details data-card="{{uuid}}" class="dhc-card {{#if featured}}dhc-featured{{/if}} {{#if resolved}}dhc-resolved{{/if}}" {{#if expanded}}open{{/if}}>
               <summary>{{name}}{{#unless missing}} · {{status}}{{/unless}}{{#if archived}} · {{localize "DHC.archived"}}{{/if}}</summary>
               {{#unless missing}}
-                {{#each fields}}<h4>{{label}}</h4><p class="dhc-text">{{value}}</p>{{/each}}
+                {{#each groups}}
+                  {{#if background}}
+                    <details class="dhc-thread-background"><summary>{{label}}</summary>
+                      {{#each fields}}<h4>{{label}}</h4><p class="dhc-text">{{value}}</p>{{/each}}
+                    </details>
+                  {{else}}
+                    <section><h4>{{label}}</h4>
+                      {{#each fields}}<h5>{{label}}</h5><p class="dhc-text">{{value}}</p>{{/each}}
+                    </section>
+                  {{/if}}
+                {{/each}}
                 {{#each links}}
                   {{#if missing}}<p class="dhc-warning">{{name}}</p>{{else}}
                     <button class="dhc-document" type="button" data-action="openLink" data-uuid="{{uuid}}">

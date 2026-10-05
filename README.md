@@ -31,8 +31,14 @@ Alternatively, install manually:
 
 - Enter a name and create a session. **Preparation** shows the opening,
   situations, clues, possible escalations and character questions.
-- Create campaign threads separately: established facts, people and motives,
-  and possible developments. Toggle a thread between open and resolved.
+- Create campaign threads separately, grouped into **Background** (established
+  facts and people/goals), **Options for action** (challenges and possible
+  approaches/rolls), and **Developments** (without and with intervention).
+  All note fields are optional. Describe what is at stake and possible reactions,
+  not a mandatory roll sequence or predetermined outcome. A success with Fear
+  remains a success. Toggle a thread between open and resolved.
+  In session cards, background is separately collapsible; nonempty challenges,
+  approaches and developments are immediately visible when the card is expanded.
 - Select your session and attach relevant threads. Drag Actors, Journals,
   Scenes or RollTables from the sidebar to pin their document links. Links show
   a document-type icon and label (Actor, Journal, Journal page, Scene or Roll table),
@@ -82,10 +88,12 @@ Refresh to discard the stale draft, then reapply it. Storage/quota/corrupt-draft
 errors are notified; corrupt drafts are not automatically overwritten. If local
 backup fails, closing with unsaved text asks for confirmation.
 
-Back up the world, replace the module directory with version **0.2.2**, restart
-Foundry and reload the browser. Existing 0.1.0 journal data is upgraded in memory
-when read and persisted as version 2 on its next successful save. Notes, links,
-events, spotlight and thread associations are preserved. Unknown versions are
+Back up the world, replace the module directory with version **0.3.0**, restart
+Foundry and reload the browser. Existing 0.1.x and 0.2.x journal data is upgraded
+in memory when read and persisted as version 3 on its next successful save. New
+thread fields start empty; notes, links, events, spotlight, archives, highlights
+and thread associations are preserved. Local drafts remain usable with their
+original revision checks. Unknown versions are
 not overwritten. After saving upgraded data, do not downgrade the module without
 restoring the pre-upgrade world backup.
 

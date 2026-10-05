@@ -1,5 +1,5 @@
 import {
-  ID, SESSION_FIELDS, THREAD_FIELDS, updateFields, matchesSearch, appendNote, documentPresentation
+  ID, SESSION_FIELDS, THREAD_FIELDS, THREAD_GROUPS, updateFields, matchesSearch, appendNote, documentPresentation
 } from "./model.mjs";
 import { CockpitStore } from "./store.mjs";
 import { Drafts } from "./drafts.mjs";
@@ -39,6 +39,16 @@ const ACTIONS = [
   "applyConversion", "previewSummary", "publishSummary", "removeEvent"
 ];
 const VIEWS = ["prep", "play", "after"];
+
+function threadGroups(record) {
+  return THREAD_GROUPS.map(group => ({
+    key: group.key, label: t(group.key), background: group.key === "threadBackground",
+    fields: group.fields.map(key => ({
+      key, label: t(key), value: record[key],
+      hint: ["challenges", "approaches", "intervention"].includes(key) ? t(`${key}Hint`) : ""
+    }))
+  }));
+}
 
 class Cockpit extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
@@ -162,6 +172,9 @@ class Cockpit extends HandlebarsApplicationMixin(ApplicationV2) {
         featured: record.featured.includes(uuid),
         expanded: record.featured.includes(uuid) || this.expandedCards.has(uuid),
         fields: THREAD_FIELDS.map(key => ({ label: t(key), value: thread[key] })),
+        groups: threadGroups(thread).map(group => ({
+          ...group, fields: group.fields.filter(field => field.value.trim())
+        })).filter(group => group.fields.length),
         links: await Promise.all(thread.links.map(resolve))
       };
     })) : [];
@@ -177,6 +190,7 @@ class Cockpit extends HandlebarsApplicationMixin(ApplicationV2) {
       query: this.query, showArchives: this.showArchives,
       selected: doc ? { name: doc.name, uuid: doc.uuid } : null,
       record, isSession, status: t(record?.status ?? "open"),
+      threadGroups: record?.kind === "thread" ? threadGroups(record) : [],
       views: VIEWS.map(key => ({ key, label: t(key), active: this.view === key })),
       prep: this.view === "prep", play: this.view === "play", after: this.view === "after",
       fields: record ? (isSession ? SESSION_FIELDS : THREAD_FIELDS).map(key => ({

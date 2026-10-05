@@ -1,7 +1,12 @@
 export const ID = "daggerheart-cockpit";
-export const VERSION = 2;
+export const VERSION = 3;
 export const SESSION_FIELDS = ["opening", "situations", "clues", "escalations", "questions", "consequences", "feedback", "nextGoals"];
-export const THREAD_FIELDS = ["facts", "motives", "development"];
+export const THREAD_GROUPS = [
+  { key: "threadBackground", fields: ["facts", "motives"] },
+  { key: "threadOptions", fields: ["challenges", "approaches"] },
+  { key: "threadDevelopments", fields: ["development", "intervention"] }
+];
+export const THREAD_FIELDS = THREAD_GROUPS.flatMap(group => group.fields);
 
 export function documentPresentation(doc) {
   const types = {
@@ -38,9 +43,15 @@ export function createRecord(kind, name, previous = null) {
 export function upgradeRecord(record) {
   const next = structuredClone(record);
   if (next?.version === 1) {
-    next.version = VERSION;
+    next.version = 2;
     next.archived = false;
     if (next.kind === "session") next.featured = [];
+  }
+  if (next?.version === 2) {
+    next.version = VERSION;
+    if (next.kind === "thread") {
+      for (const key of ["challenges", "approaches", "intervention"]) next[key] = "";
+    }
   }
   return validateRecord(next);
 }

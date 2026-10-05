@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import Handlebars from "handlebars";
 import { parseHTML } from "linkedom";
-import { ID, SESSION_FIELDS, createRecord } from "../scripts/model.mjs";
+import { ID, SESSION_FIELDS, THREAD_FIELDS, createRecord } from "../scripts/model.mjs";
 
 let Cockpit;
 let confirmation = true;
@@ -119,7 +119,7 @@ function makeApp(doc) {
       input("event", "", { draft: "event" }),
       input("newName"), input("rename", context.selected?.name), input("search", context.query),
       input("thread", context.available[0]?.uuid ?? ""),
-      ...context.record.events.map((event, index) =>
+      ...(context.record.events ?? []).map((event, index) =>
         input(`check${index}`, "", { draft: `summaryEvent:${index}`, summaryEvent: String(index) }, "checkbox")),
       input("checkConsequences", "", { draft: "summaryConsequences", summaryField: "consequences" }, "checkbox"),
       input("checkGoals", "", { draft: "summaryGoals", summaryField: "nextGoals" }, "checkbox")
@@ -560,6 +560,39 @@ test("stale, failed, invalid and unauthorized event deletion leaves events intac
   assert.equal(doc.flags[ID].record.events.length, 1);
 });
 
+test("thread editor groups optional fields, restores drafts and displays new notes in session cards", async () => {
+  const { app, doc } = setup();
+  const thread = document({
+    name: "Moor", flags: { [ID]: { record: createRecord("thread", "Moor") } },
+    pages: [{ flags: { [ID]: { managed: true } }, text: { content: "" } }]
+  });
+  doc.flags[ID].record.threads = [thread.uuid];
+  await app.render();
+  await app.action("select", { id: thread.id });
+  const { document: editor } = parseHTML(`<html><body>${template(app.context)}</body></html>`);
+  assert.equal(editor.querySelectorAll(".dhc-thread-group").length, 3);
+  for (const field of THREAD_FIELDS) assert.ok(editor.querySelector(`[data-note="${field}"]`));
+  app.control("challenges").value = "Hidden traps";
+  app.control("approaches").value = "Instinct or another sensible approach";
+  app.control("intervention").value = "Rescue may cost time";
+  app.captureDraft();
+  const restored = makeApp(thread);
+  await restored.render();
+  assert.equal(restored.control("challenges").value, "Hidden traps");
+  await restored.action("save");
+  assert.equal(thread.flags[ID].record.intervention, "Rescue may cost time");
+  await restored.action("select", { id: doc.id });
+  const { document: cards } = parseHTML(`<html><body>${template(restored.context)}</body></html>`);
+  assert.match(cards.querySelector(".dhc-card").textContent, /Hidden traps/);
+  assert.match(cards.querySelector(".dhc-card").textContent, /Instinct or another sensible approach/);
+  assert.match(cards.querySelector(".dhc-card").textContent, /Rescue may cost time/);
+  assert.equal(cards.querySelectorAll(".dhc-thread-background").length, 0);
+  thread.flags[ID].record.facts = "Established";
+  const context = await restored._prepareContext();
+  const { document: populated } = parseHTML(`<html><body>${template(context)}</body></html>`);
+  assert.equal(populated.querySelector(".dhc-thread-background").hasAttribute("open"), false);
+});
+
 test("metadata and translation keys cover both languages and all note fields", async () => {
   const manifest = JSON.parse(await readFile(new URL("../module.json", import.meta.url), "utf8"));
   assert.equal(manifest.id, ID);
@@ -573,7 +606,9 @@ test("metadata and translation keys cover both languages and all note fields", a
   const keys = [
     ...Array.from(source.matchAll(/\bt\("([^"]+)"\)/g), match => match[1]),
     ...Array.from((source + template).matchAll(/DHC\.([A-Za-z]+)/g), match => match[1]),
-    ...SESSION_FIELDS, "prep", "play", "after"
+    ...SESSION_FIELDS, ...THREAD_FIELDS, "prep", "play", "after",
+    "threadBackground", "threadOptions", "threadDevelopments",
+    "challengesHint", "approachesHint", "interventionHint"
   ];
   const de = JSON.parse(await readFile(new URL("../lang/de.json", import.meta.url), "utf8")).DHC;
   const en = JSON.parse(await readFile(new URL("../lang/en.json", import.meta.url), "utf8")).DHC;

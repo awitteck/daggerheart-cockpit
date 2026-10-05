@@ -222,3 +222,35 @@ test("model rejects malformed notes, lists, events and status", () => {
   const thread = createRecord("thread", "One");
   assert.throws(() => journalHTML({ ...thread, status: "bad" }, key => key), /Invalid/);
 });
+
+test("version 2 threads gain empty optional fields without changing existing facts or metadata", async () => {
+  const { store } = setup();
+  const doc = await store.create("thread", "Old thread");
+  Object.assign(doc.flags[ID].record, {
+    version: 2, facts: "Known fact", motives: "Rescue sister", development: "Treck leaves",
+    revision: 4, archived: true, links: ["Actor.scout"], status: "resolved"
+  });
+  for (const key of ["challenges", "approaches", "intervention"]) delete doc.flags[ID].record[key];
+  const record = store.read(doc);
+  assert.equal(record.version, VERSION);
+  assert.equal(record.revision, 4);
+  assert.equal(record.facts, "Known fact");
+  assert.equal(record.motives, "Rescue sister");
+  assert.equal(record.development, "Treck leaves");
+  assert.equal(record.archived, true);
+  assert.deepEqual(record.links, ["Actor.scout"]);
+  assert.equal(record.status, "resolved");
+  for (const key of ["challenges", "approaches", "intervention"]) assert.equal(record[key], "");
+  assert.equal(doc.flags[ID].record.version, 2);
+  await store.change(doc, record => updateFields(record, {
+    challenges: "Traps", approaches: "Instinct to spot traps", intervention: "Rescue costs time"
+  }));
+  const saved = store.read(doc);
+  assert.equal(saved.revision, 5);
+  assert.ok(matchesSearch(doc.name, saved, "traps"));
+  assert.ok(matchesSearch(doc.name, saved, "instinct"));
+  assert.ok(matchesSearch(doc.name, saved, "costs time"));
+  assert.match(doc.pages[0].text.content, /Traps/);
+  assert.match(doc.pages[0].text.content, /Instinct to spot traps/);
+  assert.match(doc.pages[0].text.content, /Rescue costs time/);
+});
