@@ -97,7 +97,7 @@ original revision checks. Unknown versions are
 not overwritten. After saving upgraded data, do not downgrade the module without
 restoring the pre-upgrade world backup.
 
-## Shared campaign book and player notes (0.4.0)
+## Shared campaign book and player notes (0.4.1)
 
 1. As primary GM, select a session, expand **Player notes** and click
    **Enable player notes for this session**. Confirm the visibility warning.
@@ -113,7 +113,8 @@ restoring the pre-upgrade world backup.
    ```
 
 3. Select a session as the origin of new entries. Add a title, text, category
-   (**People/NPCs**, **Places**, **Clues/theories**, **Events/agreements**) and source
+   (**General session notes**, **People/NPCs**, **Places**, **Clues/theories**,
+   **Events/agreements**) and source
    (**Observed**, **Reported**, **Theory**). Save the entry to share it with everyone.
    **New entry** clears the editor after confirmation when needed. Your own saved
    entries have edit/delete buttons; deletion requires confirmation.
@@ -121,14 +122,19 @@ restoring the pre-upgrade world backup.
    category and sorted by title. Search covers title, text, author and session
    name. Multiple players can write about the same NPC; their contributions
    remain separate and attributed, rather than overwriting each other.
-5. A collapsible free-text session contribution remains available for general
-   observations and older notebook content. It is saved separately from entries.
+5. All contributions use this single editor and shared category listing.
+   Use **General session notes** for experiences, questions, next goals or other
+   observations. Existing saved free-text contributions automatically appear as
+   general entries; the conversion is persisted on the next successful save in
+   that notebook. Existing unsaved free-text drafts can be loaded into the same
+   editor using **Load old draft into this editor**, with confirmation before
+   replacing another entry draft. They remain recoverable until saved or explicitly discarded.
 6. Use **Reload contributions** to fetch the latest view while retaining your
    own draft. Notes are not automatically live-re-rendered during typing. Drafts
    are browser-local and revision-checked; **Discard draft** explicitly discards
-   the selected notebook's unsaved editor and free-text contribution.
+   the selected notebook's unsaved editor and any retained old free-text draft.
 7. The GM's **After the session** summary selection includes that session's
-   saved book entries and free-text contributions. Select desired items, generate
+   saved entries, including general session notes. Select desired items, generate
    the editable preview, then confirm publication. Category/source labels remain
    visible in the selection; source and author are carried into the preview.
    No entry is automatically promoted to an established campaign fact.

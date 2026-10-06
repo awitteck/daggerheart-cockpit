@@ -21,7 +21,7 @@ export class PlayerNotes extends HandlebarsApplicationMixin(ApplicationV2) {
     window: { title: "DHC.playerNotes", resizable: true },
     position: { width: 760, height: 720 },
     actions: {
-      notesSelect: PlayerNotes.action, notesSave: PlayerNotes.action,
+      notesSelect: PlayerNotes.action, bookLegacy: PlayerNotes.action,
       notesRefresh: PlayerNotes.action, notesDiscard: PlayerNotes.action,
       bookSave: PlayerNotes.action, bookEdit: PlayerNotes.action, bookNew: PlayerNotes.action,
       bookRemove: PlayerNotes.action, bookSearch: PlayerNotes.action
@@ -51,13 +51,14 @@ export class PlayerNotes extends HandlebarsApplicationMixin(ApplicationV2) {
 
   capture() {
     if (!this.own || !this.element) return;
-    const input = this.element.querySelector("[name=playerBody]");
-    if (!input) return;
+    if (!this.element.querySelector("[name=bookText]")) return;
     const values = Object.fromEntries(Array.from(this.element.querySelectorAll("[data-player-draft]")).map(input =>
       [input.dataset.playerDraft, input.value]
     ));
+    if (this.draft?.values.playerBody) values.playerBody = this.draft.values.playerBody;
+    if (this.draft?.values.legacyLoaded) values.legacyLoaded = this.draft.values.legacyLoaded;
     this.draft = { revision: this.revision, values };
-    this.dirty = input.value !== playerNotesStore.read(this.own).body || Boolean(values.bookTitle || values.bookText);
+    this.dirty = Boolean(values.bookTitle || values.bookText || values.playerBody);
     try {
       // A corrupt draft is retained until the user explicitly discards it.
       if (!this.draftError) this.drafts.save(this.own.uuid, this.revision, this.draft.values);
@@ -90,14 +91,19 @@ export class PlayerNotes extends HandlebarsApplicationMixin(ApplicationV2) {
       this.draft = null;
       this.draftError = false;
       if (own) {
-        try { this.draft = this.drafts.read(own.uuid); }
+        try {
+          this.draft = this.drafts.read(own.uuid);
+          const original = own.getFlag(ID, "playerNotes");
+          if (original.version < 3 && this.draft?.values.playerBody === original.body) {
+            delete this.draft.values.playerBody;
+          }
+        }
         catch (error) { this.draftError = true; this.report(new Error(`${t("draftError")} ${error.message}`)); }
       }
     }
     const record = own ? playerNotesStore.read(own) : null;
     this.revision = this.draft?.revision ?? record?.revision ?? null;
-    const body = this.draft?.values.playerBody ?? record?.body ?? "";
-    this.dirty = Boolean(record && (body !== record.body || this.draft?.values.bookTitle || this.draft?.values.bookText));
+    this.dirty = Boolean(record && (this.draft?.values.playerBody || this.draft?.values.bookTitle || this.draft?.values.bookText));
     const allEntries = notebooks.flatMap(doc => {
       const notes = playerNotesStore.read(doc);
       return notes.entries.map(entry => ({
@@ -110,8 +116,8 @@ export class PlayerNotes extends HandlebarsApplicationMixin(ApplicationV2) {
     allEntries.sort((a, b) => a.title.localeCompare(b.title));
     return {
       sessions: Array.from(sessions, ([id, name]) => ({ id, name, selected: id === this.selectedSession })),
-      own: Boolean(own), body, stale: Boolean(record && this.revision !== record.revision),
-      entries: this.selectedSession ? playerNotesStore.list(this.selectedSession).map(doc => playerNotesStore.read(doc)) : [],
+      own: Boolean(own), stale: Boolean(record && this.revision !== record.revision),
+      legacyDraft: Boolean(this.draft?.values.playerBody),
       query: this.query,
       categories: BOOK_CATEGORIES.map(key => ({ key, label: t(`book_${key}`) })),
       sources: BOOK_SOURCES.map(key => ({ key, label: t(`source_${key}`) })),
@@ -150,7 +156,7 @@ export class PlayerNotes extends HandlebarsApplicationMixin(ApplicationV2) {
       const action = target.dataset.action;
       if (action === "bookSearch") {
         this.query = this.element.querySelector("[name=bookSearch]").value;
-      } else if (action === "bookEdit" || action === "bookNew") {
+      } else if (action === "bookEdit" || action === "bookNew" || action === "bookLegacy") {
         if ((this.draft?.values.bookTitle || this.draft?.values.bookText) && !await DialogV2.confirm({
           window: { title: t("unsaved") }, content: `<p>${t("replaceBookDraft")}</p>`
         })) return;
@@ -174,14 +180,22 @@ export class PlayerNotes extends HandlebarsApplicationMixin(ApplicationV2) {
           this.revision = same ? this.revision : notes.revision;
           this.draftError = false;
           this.draft = { revision: previous?.revision ?? this.revision, values: {
-            ...previous?.values, playerBody: previous?.values.playerBody ?? notes.body,
+            ...previous?.values,
             bookId: entry.id, bookTitle: entry.title, bookText: entry.text,
             bookCategory: entry.category, bookSource: entry.source
           } };
+          delete this.draft.values.legacyLoaded;
         } else {
           if (!this.own) throw new Error(t("noOwnNotebook"));
           if (this.draftError) throw new Error(t("draftError"));
-          this.draft.values = { playerBody: this.draft.values.playerBody, bookId: foundry.utils.randomID() };
+          const legacy = this.draft.values.playerBody;
+          this.draft.values = {
+            ...(legacy ? { playerBody: legacy } : {}), bookId: foundry.utils.randomID(),
+            ...(action === "bookLegacy" ? {
+              bookTitle: t("generalSessionNote"), bookText: legacy ?? "", bookCategory: "general", bookSource: "reported",
+              legacyLoaded: "true"
+            } : {})
+          };
         }
         this.drafts.save(this.own.uuid, this.draft.revision, this.draft.values);
       } else if (action === "bookSave") {
@@ -194,7 +208,7 @@ export class PlayerNotes extends HandlebarsApplicationMixin(ApplicationV2) {
         };
         if (!entry.title || !entry.text) throw new Error(t("bookRequired"));
         const record = await playerNotesStore.saveEntry(this.own, this.revision, entry);
-        this.acceptSave(record, true);
+        this.acceptSave(record, true, true);
       } else if (action === "bookRemove") {
         const doc = playerNotesStore.list().find(doc => doc.id === target.dataset.notebook);
         if (!doc) throw new Error(t("missing"));
@@ -205,9 +219,6 @@ export class PlayerNotes extends HandlebarsApplicationMixin(ApplicationV2) {
         const record = await playerNotesStore.removeEntry(doc,
           doc.id === this.own?.id ? this.revision : playerNotesStore.read(doc).revision, target.dataset.entry);
         if (doc.id === this.own?.id) this.acceptSave(record, this.draft?.values.bookId === target.dataset.entry);
-      } else if (action === "notesSave") {
-        const record = await playerNotesStore.save(this.own, this.revision, this.element.querySelector("[name=playerBody]").value);
-        this.acceptSave(record, false, true);
       } else if (target.dataset.action === "notesSelect") {
         this.selectedSession = target.dataset.id;
       } else if (target.dataset.action === "notesDiscard") {
@@ -230,18 +241,18 @@ export class PlayerNotes extends HandlebarsApplicationMixin(ApplicationV2) {
 
   }
 
-  acceptSave(record, clearEntry, updateBody = false) {
+  acceptSave(record, clearEntry, savedEntry = false) {
     this.revision = record.revision;
     this.draft = { revision: record.revision, values: { ...this.draft?.values } };
     if (clearEntry) {
-    for (const key of ["bookId", "bookTitle", "bookText", "bookCategory", "bookSource"]) delete this.draft.values[key];
+      if (savedEntry && this.draft.values.legacyLoaded === "true") delete this.draft.values.playerBody;
+      for (const key of ["bookId", "bookTitle", "bookText", "bookCategory", "bookSource", "legacyLoaded"]) delete this.draft.values[key];
     }
-    if (updateBody) this.draft.values.playerBody = record.body;
     try {
-    if (!this.draftError) this.drafts.save(this.own.uuid, record.revision, this.draft.values);
+      if (!this.draftError) this.drafts.save(this.own.uuid, record.revision, this.draft.values);
     } catch (error) {
-    this.draftError = true;
-    this.report(new Error(`${t("draftError")} ${error.message}`));
+      this.draftError = true;
+      this.report(new Error(`${t("draftError")} ${error.message}`));
     }
   }
 }

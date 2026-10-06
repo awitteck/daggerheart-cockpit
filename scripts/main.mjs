@@ -214,10 +214,6 @@ class Cockpit extends HandlebarsApplicationMixin(ApplicationV2) {
       conversion: this.conversion?.session === doc?.id ? this.conversion : null,
       summaryReady: this.summaryReady || Boolean(draft?.values?.summaryBody),
       summaryName: doc ? `${doc.name} — ${t("summary")}` : "",
-      playerContributions: isSession ? playerNotesStore.list(doc.id).map(notebook => {
-        const notes = playerNotesStore.read(notebook);
-        return { id: notebook.id, authorName: notes.authorName, body: notes.body };
-      }) : [],
       bookContributions: isSession ? playerNotesStore.list(doc.id).flatMap(notebook => {
         const notes = playerNotesStore.read(notebook);
         return notes.entries.map(entry => ({
@@ -560,13 +556,6 @@ class Cockpit extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     for (const input of this.element.querySelectorAll("[data-summary-field]")) {
       if (input.checked) sections.push(`${t(input.dataset.summaryField)}\n${record[input.dataset.summaryField]}`);
-    }
-    for (const input of this.element.querySelectorAll("[data-summary-player]")) {
-      if (!input.checked) continue;
-      const doc = playerNotesStore.list(this.selectedId).find(doc => doc.id === input.dataset.summaryPlayer);
-      if (!doc) throw new Error(t("missing"));
-      const notes = playerNotesStore.read(doc);
-      if (notes.body.trim()) sections.push(`${notes.authorName}\n${notes.body}`);
     }
     for (const input of this.element.querySelectorAll("[data-summary-book]")) {
       if (!input.checked) continue;

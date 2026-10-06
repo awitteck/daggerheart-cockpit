@@ -1,14 +1,15 @@
 import { ID, publicHTML, escapeHTML } from "./model.mjs";
 
-export const BOOK_CATEGORIES = ["person", "place", "clue", "agreement"];
+export const BOOK_CATEGORIES = ["general", "person", "place", "clue", "agreement"];
 export const BOOK_SOURCES = ["observed", "reported", "theory"];
 
 export function validateNotebook(record) {
-  if (!record || ![1, 2].includes(record.version) || !Number.isSafeInteger(record.revision) || record.revision < 0 ||
-      ["sessionId", "sessionName", "userId", "authorName", "body"].some(key => typeof record[key] !== "string")) {
+  if (!record || ![1, 2, 3].includes(record.version) || !Number.isSafeInteger(record.revision) || record.revision < 0 ||
+      ["sessionId", "sessionName", "userId", "authorName", "body"].some(key => typeof record[key] !== "string") ||
+      (record.version === 3 && record.body !== "")) {
     throw new Error("Unsupported or damaged player notes. No data was changed.");
   }
-  if (record.version === 2 && (!Array.isArray(record.entries) || record.entries.some(entry =>
+  if (record.version >= 2 && (!Array.isArray(record.entries) || record.entries.some(entry =>
     !entry || ["id", "title", "text", "updated"].some(key => typeof entry[key] !== "string") ||
     !/^[A-Za-z0-9_-]+$/.test(entry.id) || !entry.title.trim() || !entry.text.trim() ||
     !BOOK_CATEGORIES.includes(entry.category) || !BOOK_SOURCES.includes(entry.source)
@@ -38,6 +39,18 @@ export class PlayerNotesStore {
       record.version = 2;
       record.entries = [];
     }
+    if (record.version === 2) {
+      record.version = 3;
+      if (record.body.trim()) {
+        let id = "legacy-session-note";
+        while (record.entries.some(entry => entry.id === id)) id += "-old";
+        record.entries.push({
+          id, title: this.env.localize("generalSessionNote"), text: record.body,
+          category: "general", source: "reported", updated: ""
+        });
+      }
+      record.body = "";
+    }
     return record;
   }
 
@@ -53,7 +66,7 @@ export class PlayerNotesStore {
       for (const user of this.env.users().filter(user => !user.isGM)) {
         if (this.list(session.id).some(doc => this.read(doc).userId === user.id)) continue;
         const record = {
-          version: 2, revision: 0, sessionId: session.id, sessionName: session.name,
+          version: 3, revision: 0, sessionId: session.id, sessionName: session.name,
           userId: user.id, authorName: user.name, body: "", entries: []
         };
         await this.env.createJournal({
@@ -73,19 +86,10 @@ export class PlayerNotesStore {
 
   html(record) {
     return `<h2>${escapeHTML(record.authorName)}</h2>` +
-      (record.body.trim() ? publicHTML(record.body) : "") +
       record.entries.map(entry => `<h3>${escapeHTML(entry.title)}</h3><p>${
         escapeHTML(this.env.localize(`book_${entry.category}`))} · ${
         escapeHTML(this.env.localize(`source_${entry.source}`))}</p>${publicHTML(entry.text)}`).join("") +
-      (!record.body.trim() && !record.entries.length ? `<p>${escapeHTML(this.env.localize("noPlayerNotes"))}</p>` : "");
-  }
-
-  save(doc, revision, body) {
-    return this.change(doc, revision, record => {
-      if (typeof body !== "string") throw new Error("Player notes must be text.");
-      record.body = body;
-      return record;
-    });
+      (!record.entries.length ? `<p>${escapeHTML(this.env.localize("noPlayerNotes"))}</p>` : "");
   }
 
   saveEntry(doc, revision, entry) {

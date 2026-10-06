@@ -14,6 +14,7 @@
       {{#if stale}}<p class="dhc-warning">{{localize "DHC.conflict"}}</p>{{/if}}
       <section class="dhc-card">
         <h3>{{localize "DHC.bookEditor"}}</h3>
+        <p class="dhc-hint">{{localize "DHC.unifiedNotesHint"}}</p>
         <input type="hidden" name="bookId" data-player-draft="bookId">
         <label>{{localize "DHC.bookTitle"}}<input name="bookTitle" data-player-draft="bookTitle"></label>
         <label>{{localize "DHC.bookCategory"}}<select name="bookCategory" data-player-draft="bookCategory">
@@ -26,10 +27,10 @@
         <button type="button" data-action="bookSave">{{localize "DHC.bookSave"}}</button>
         <button type="button" data-action="bookNew">{{localize "DHC.bookNew"}}</button>
       </section>
-      <details><summary>{{localize "DHC.myPlayerNotes"}}</summary>
-        <textarea name="playerBody" data-player-draft="playerBody" rows="5">{{body}}</textarea>
-        <button type="button" data-action="notesSave">{{localize "DHC.savePlayerNotes"}}</button>
-      </details>
+      {{#if legacyDraft}}
+        <p>{{localize "DHC.legacyPlayerDraft"}}</p>
+        <button type="button" data-action="bookLegacy">{{localize "DHC.loadLegacyPlayerDraft"}}</button>
+      {{/if}}
       <button type="button" data-action="notesDiscard">{{localize "DHC.discardPlayerDraft"}}</button>
     {{else}}
       <p>{{localize "DHC.noOwnNotebook"}}</p>
@@ -38,6 +39,7 @@
     <p>{{localize "DHC.bookAcrossSessions"}}</p>
     <label>{{localize "DHC.search"}}<input name="bookSearch" value="{{query}}" type="search"></label>
     <button type="button" data-action="bookSearch">{{localize "DHC.search"}}</button>
+    {{#unless groups.length}}<p>{{localize "DHC.noPlayerNotes"}}</p>{{/unless}}
     {{#each groups}}
       <section><h3>{{label}}</h3>
         {{#each entries}}
@@ -52,10 +54,6 @@
           </details>
         {{/each}}
       </section>
-    {{/each}}
-    <h3>{{localize "DHC.sharedContributions"}}</h3>
-    {{#each entries}}
-      {{#if body}}<section class="dhc-card"><h4>{{authorName}}</h4><p class="dhc-text">{{body}}</p></section>{{/if}}
     {{/each}}
   </main>
 </div>

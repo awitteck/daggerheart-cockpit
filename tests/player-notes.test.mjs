@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { ID, createRecord } from "../scripts/model.mjs";
 import { PlayerNotesStore } from "../scripts/player-notes.mjs";
 
+const general = text => ({ id: "general", title: "Session note", text, category: "general", source: "reported" });
+
 function setup() {
   let user = { id: "gm", isGM: true };
   const users = [user, { id: "one", name: "One", isGM: false }, { id: "two", name: "Two", isGM: false }];
@@ -57,31 +59,31 @@ test("players can save their own text, not other players' notebooks or provision
   const { store, docs, setUser } = setup();
   await store.enable({ id: "session", name: "One" });
   setUser("one");
-  await store.save(docs[0], 0, "My theory");
-  assert.equal(store.read(docs[0]).body, "My theory");
+  await store.saveEntry(docs[0], 0, general("My theory"));
+  assert.equal(store.read(docs[0]).entries[0].text, "My theory");
   assert.equal(store.read(docs[0]).revision, 1);
   assert.match(docs[0].pages[0].text.content, /My theory/);
-  await assert.rejects(store.save(docs[1], 0, "Overwrite"), /ownNotesOnly/);
+  await assert.rejects(store.saveEntry(docs[1], 0, general("Overwrite")), /ownNotesOnly/);
   await assert.rejects(store.enable({ id: "another", name: "Another" }), /primaryGM/);
   setUser("two");
-  await store.save(docs[1], 0, "Independent");
-  assert.equal(store.read(docs[0]).body, "My theory");
-  assert.equal(store.read(docs[1]).body, "Independent");
+  await store.saveEntry(docs[1], 0, general("Independent"));
+  assert.equal(store.read(docs[0]).entries[0].text, "My theory");
+  assert.equal(store.read(docs[1]).entries[0].text, "Independent");
 });
 
 test("stale writes, failures, absent documents and corrupt versions preserve saved notes", async () => {
   const { store, docs, setUser } = setup();
   await store.enable({ id: "session", name: "One" });
   setUser("one");
-  await store.save(docs[0], 0, "Saved");
-  await assert.rejects(store.save(docs[0], 0, "Stale"), /conflict/);
+  await store.saveEntry(docs[0], 0, general("Saved"));
+  await assert.rejects(store.saveEntry(docs[0], 0, general("Stale")), /conflict/);
   docs[0].fail = true;
-  await assert.rejects(store.save(docs[0], 1, "Lost"), /disk/);
-  assert.equal(store.read(docs[0]).body, "Saved");
+  await assert.rejects(store.saveEntry(docs[0], 1, general("Lost")), /disk/);
+  assert.equal(store.read(docs[0]).entries[0].text, "Saved");
   docs[0].fail = false;
   docs[0].flags[ID].playerNotes.version = 999;
-  await assert.rejects(store.save(docs[0], 1, "Lost"), /Unsupported/);
-  await assert.rejects(store.save(null, 0, ""), /noOwnNotebook/);
+  await assert.rejects(store.saveEntry(docs[0], 1, general("Lost")), /Unsupported/);
+  await assert.rejects(store.saveEntry(null, 0, general("Text")), /noOwnNotebook/);
 });
 
 test("player contributions render as inert text and stay associated with the right session", async () => {
@@ -89,7 +91,7 @@ test("player contributions render as inert text and stay associated with the rig
   await store.enable({ id: "session", name: "One" });
   await store.enable({ id: "other", name: "Other" });
   setUser("one");
-  await store.save(docs[0], 0, "<script>bad</script> @UUID[JournalEntry.private]");
+  await store.saveEntry(docs[0], 0, general("<script>bad</script> @UUID[JournalEntry.private]"));
   assert.doesNotMatch(docs[0].pages[0].text.content, /<script>|@UUID\[/);
   assert.equal(store.list("session").length, 2);
   assert.equal(store.list("other").length, 2);
@@ -129,11 +131,38 @@ test("legacy free text notebooks upgrade lazily and preserve original text", asy
   original.version = 1;
   original.body = "Old text";
   delete original.entries;
-  assert.equal(store.read(docs[0]).version, 2);
-  assert.deepEqual(store.read(docs[0]).entries, []);
+  assert.equal(store.read(docs[0]).version, 3);
+  assert.equal(store.read(docs[0]).entries[0].text, "Old text");
+  assert.equal(store.read(docs[0]).entries[0].category, "general");
   assert.equal(original.version, 1);
   setUser("one");
   await store.saveEntry(docs[0], 0, { id: "new", title: "Place", text: "A valley", category: "place", source: "observed" });
-  assert.equal(store.read(docs[0]).body, "Old text");
+  assert.equal(store.read(docs[0]).body, "");
+  assert.equal(store.read(docs[0]).entries[0].text, "Old text");
+  assert.equal(store.read(docs[0]).entries.length, 2);
   assert.match(docs[0].pages[0].text.content, /Old text/);
+});
+
+test("version 2 migration preserves existing entries, avoids ID collisions and persists only after success", async () => {
+  const { store, docs, setUser } = setup();
+  await store.enable({ id: "session", name: "One" });
+  const doc = docs[0];
+  doc.flags[ID].playerNotes = {
+    ...doc.flags[ID].playerNotes, version: 2, body: "Legacy text",
+    entries: [{ ...general("Already saved"), id: "legacy-session-note", updated: "now" }]
+  };
+  const original = structuredClone(doc.flags[ID].playerNotes);
+  const upgraded = store.read(doc);
+  assert.deepEqual(upgraded.entries.map(entry => entry.id), ["legacy-session-note", "legacy-session-note-old"]);
+  assert.equal(upgraded.entries[1].text, "Legacy text");
+  assert.deepEqual(doc.flags[ID].playerNotes, original);
+  setUser("one");
+  doc.fail = true;
+  await assert.rejects(store.removeEntry(doc, 0, "legacy-session-note-old"), /disk/);
+  assert.deepEqual(doc.flags[ID].playerNotes, original);
+  doc.fail = false;
+  await store.removeEntry(doc, 0, "legacy-session-note-old");
+  assert.equal(store.read(doc).version, 3);
+  assert.deepEqual(store.read(doc).entries.map(entry => entry.text), ["Already saved"]);
+  assert.equal(store.read(doc).body, "");
 });
