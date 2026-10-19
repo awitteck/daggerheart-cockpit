@@ -1,6 +1,6 @@
 import { ID } from "./model.mjs";
 import { Drafts } from "./drafts.mjs";
-import { PlayerNotesStore, BOOK_CATEGORIES, BOOK_SOURCES } from "./player-notes.mjs";
+import { PlayerNotesStore, BOOK_CATEGORIES } from "./player-notes.mjs";
 
 const t = key => game.i18n.localize(`DHC.${key}`);
 const { ApplicationV2, HandlebarsApplicationMixin, DialogV2 } = foundry.applications.api;
@@ -108,8 +108,7 @@ export class PlayerNotes extends HandlebarsApplicationMixin(ApplicationV2) {
       const notes = playerNotesStore.read(doc);
       return notes.entries.map(entry => ({
         ...entry, notebookId: doc.id, authorName: notes.authorName, sessionName: notes.sessionName,
-        editable: notes.userId === game.user.id,
-        sourceLabel: t(`source_${entry.source}`)
+        editable: notes.userId === game.user.id
       }));
     }).filter(entry => [entry.title, entry.text, entry.authorName, entry.sessionName].join("\n")
       .toLocaleLowerCase().includes(this.query.trim().toLocaleLowerCase()));
@@ -120,7 +119,6 @@ export class PlayerNotes extends HandlebarsApplicationMixin(ApplicationV2) {
       legacyDraft: Boolean(this.draft?.values.playerBody),
       query: this.query,
       categories: BOOK_CATEGORIES.map(key => ({ key, label: t(`book_${key}`) })),
-      sources: BOOK_SOURCES.map(key => ({ key, label: t(`source_${key}`) })),
       groups: BOOK_CATEGORIES.map(key => ({
         label: t(`book_${key}`), entries: allEntries.filter(entry => entry.category === key)
       })).filter(group => group.entries.length)
@@ -182,8 +180,9 @@ export class PlayerNotes extends HandlebarsApplicationMixin(ApplicationV2) {
           this.draft = { revision: previous?.revision ?? this.revision, values: {
             ...previous?.values,
             bookId: entry.id, bookTitle: entry.title, bookText: entry.text,
-            bookCategory: entry.category, bookSource: entry.source
+            bookCategory: entry.category
           } };
+          delete this.draft.values.bookSource;
           delete this.draft.values.legacyLoaded;
         } else {
           if (!this.own) throw new Error(t("noOwnNotebook"));
@@ -192,7 +191,7 @@ export class PlayerNotes extends HandlebarsApplicationMixin(ApplicationV2) {
           this.draft.values = {
             ...(legacy ? { playerBody: legacy } : {}), bookId: foundry.utils.randomID(),
             ...(action === "bookLegacy" ? {
-              bookTitle: t("generalSessionNote"), bookText: legacy ?? "", bookCategory: "general", bookSource: "reported",
+              bookTitle: t("generalSessionNote"), bookText: legacy ?? "", bookCategory: "general",
               legacyLoaded: "true"
             } : {})
           };
@@ -203,8 +202,7 @@ export class PlayerNotes extends HandlebarsApplicationMixin(ApplicationV2) {
           id: this.element.querySelector("[name=bookId]").value || foundry.utils.randomID(),
           title: this.element.querySelector("[name=bookTitle]").value.trim(),
           text: this.element.querySelector("[name=bookText]").value.trim(),
-          category: this.element.querySelector("[name=bookCategory]").value,
-          source: this.element.querySelector("[name=bookSource]").value
+          category: this.element.querySelector("[name=bookCategory]").value
         };
         if (!entry.title || !entry.text) throw new Error(t("bookRequired"));
         const record = await playerNotesStore.saveEntry(this.own, this.revision, entry);

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { ID, createRecord } from "../scripts/model.mjs";
 import { PlayerNotesStore } from "../scripts/player-notes.mjs";
 
-const general = text => ({ id: "general", title: "Session note", text, category: "general", source: "reported" });
+const general = text => ({ id: "general", title: "Session note", text, category: "general" });
 
 function setup() {
   let user = { id: "gm", isGM: true };
@@ -102,22 +102,22 @@ test("categorized entries allow add, edit and delete only by the notebook author
   await store.enable({ id: "session", name: "One" });
   setUser("one");
   await store.saveEntry(docs[0], 0, {
-    id: "npc", title: "Ylva", text: "Suspicious", category: "person", source: "theory"
+    id: "npc", title: "Ylva", text: "Suspicious", category: "person"
   });
   await store.saveEntry(docs[0], 1, {
-    id: "moor", title: "Moor", text: "Dangerous", category: "place", source: "observed"
+    id: "moor", title: "Moor", text: "Dangerous", category: "place"
   });
   await store.saveEntry(docs[0], 2, {
-    id: "npc", title: "Ylva", text: "Helped us", category: "person", source: "observed"
+    id: "npc", title: "Ylva", text: "Helped us", category: "person"
   });
   assert.equal(store.read(docs[0]).entries.length, 2);
   assert.equal(store.read(docs[0]).entries[0].text, "Helped us");
   assert.match(docs[0].pages[0].text.content, /Ylva/);
   await assert.rejects(store.saveEntry(docs[1], 0, {
-    id: "bad", title: "Overwrite", text: "No", category: "clue", source: "reported"
+    id: "bad", title: "Overwrite", text: "No", category: "clue"
   }), /ownNotesOnly/);
   await assert.rejects(store.saveEntry(docs[0], 3, {
-    id: "bad", title: "Bad", text: "No", category: "invalid", source: "theory"
+    id: "bad", title: "Bad", text: "No", category: "invalid"
   }), /Invalid/);
   await assert.rejects(store.removeEntry(docs[0], 1, "npc"), /conflict/);
   await store.removeEntry(docs[0], 3, "npc");
@@ -136,7 +136,7 @@ test("legacy free text notebooks upgrade lazily and preserve original text", asy
   assert.equal(store.read(docs[0]).entries[0].category, "general");
   assert.equal(original.version, 1);
   setUser("one");
-  await store.saveEntry(docs[0], 0, { id: "new", title: "Place", text: "A valley", category: "place", source: "observed" });
+  await store.saveEntry(docs[0], 0, { id: "new", title: "Place", text: "A valley", category: "place" });
   assert.equal(store.read(docs[0]).body, "");
   assert.equal(store.read(docs[0]).entries[0].text, "Old text");
   assert.equal(store.read(docs[0]).entries.length, 2);
@@ -165,4 +165,18 @@ test("version 2 migration preserves existing entries, avoids ID collisions and p
   assert.equal(store.read(doc).version, 3);
   assert.deepEqual(store.read(doc).entries.map(entry => entry.text), ["Already saved"]);
   assert.equal(store.read(doc).body, "");
+});
+
+test("entries saved with the removed source label stay readable and drop it on the next save", async () => {
+  const { store, docs, setUser } = setup();
+  await store.enable({ id: "session", name: "One" });
+  docs[0].flags[ID].playerNotes.entries = [
+    { id: "old", title: "Ylva", text: "Suspicious", category: "person", source: "theory", updated: "" }
+  ];
+  assert.equal(store.read(docs[0]).entries[0].source, undefined);
+  assert.equal(docs[0].flags[ID].playerNotes.entries[0].source, "theory");
+  setUser("one");
+  await store.saveEntry(docs[0], 0, { id: "new", title: "Moor", text: "Dangerous", category: "place" });
+  assert.deepEqual(docs[0].flags[ID].playerNotes.entries.map(entry => entry.source), [undefined, undefined]);
+  assert.doesNotMatch(docs[0].pages[0].text.content, /source_/);
 });

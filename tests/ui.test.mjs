@@ -616,7 +616,7 @@ test("player contributions enter a reviewed summary only when explicitly selecte
   app.control(`book${notebook.id}:legacy-session-note`).checked = true;
   await app.action("previewSummary");
   assert.equal(app.control("summaryBody").value,
-    "Player — DHC.generalSessionNote (DHC.source_reported)\nWe suspect the captain");
+    "Player — DHC.generalSessionNote\nWe suspect the captain");
   assert.equal(doc.flags[ID].record.facts, undefined);
   assert.equal(doc.flags[ID].record.events.length, 0);
 });
@@ -634,10 +634,11 @@ test("campaign book summary selections preserve provenance and do not import fac
   });
   await app.render();
   assert.equal(app.context.bookContributions[0].title, "Captain");
-  assert.equal(app.context.bookContributions[0].source, "DHC.source_theory");
+  assert.equal(app.context.bookContributions[0].category, "DHC.book_person");
+  assert.equal(app.context.bookContributions[0].source, undefined);
   app.control(`book${notebook.id}:entry`).checked = true;
   await app.action("previewSummary");
-  assert.match(app.control("summaryBody").value, /Player — Captain \(DHC.source_theory\)/);
+  assert.equal(app.control("summaryBody").value, "Player — Captain\nMight work with the orcs");
   assert.equal(doc.flags[ID].record.events.length, 0);
 });
 
@@ -686,8 +687,7 @@ test("metadata and translation keys cover both languages and all note fields", a
     ...SESSION_FIELDS, ...THREAD_FIELDS, "prep", "play", "after",
     "threadBackground", "threadOptions", "threadDevelopments",
     "challengesHint", "approachesHint", "interventionHint",
-    "book_general", "book_person", "book_place", "book_clue", "book_agreement",
-    "source_observed", "source_reported", "source_theory"
+    "book_general", "book_person", "book_place", "book_clue", "book_agreement"
   ];
   const de = JSON.parse(await readFile(new URL("../lang/de.json", import.meta.url), "utf8")).DHC;
   const en = JSON.parse(await readFile(new URL("../lang/en.json", import.meta.url), "utf8")).DHC;

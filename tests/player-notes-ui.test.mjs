@@ -85,6 +85,7 @@ test("one form saves all categories, including general session contributions", a
   await view.render();
   assert.equal(view.element.querySelectorAll("textarea").length, 1);
   assert.equal(view.field("playerBody"), null);
+  assert.equal(view.field("bookSource"), null);
   assert.equal(view.element.querySelector("[data-action=notesSave]"), null);
   assert.equal(view.element.querySelectorAll("script").length, 0);
   assert.match(view.element.textContent, /not executable/);
@@ -92,7 +93,6 @@ test("one form saves all categories, including general session contributions", a
     view.field("bookTitle").value = category;
     view.field("bookText").value = `Text ${category}`;
     view.field("bookCategory").value = category;
-    view.field("bookSource").value = "theory";
     await view.action("bookSave");
     assert.equal(view.field("bookText").value, "");
   }
@@ -250,7 +250,7 @@ test("old stored baseline text is not offered as a duplicate unsaved contributio
 
 test("switching from a recovered draft to a saved entry does not consume the recovered text", async () => {
   const { view, mine } = setup();
-  mine.record.entries = [{ id: "saved", title: "Saved", text: "Existing", category: "clue", source: "theory", updated: "" }];
+  mine.record.entries = [{ id: "saved", title: "Saved", text: "Existing", category: "clue", updated: "" }];
   const key = `${ID}:draft:world:one:${encodeURIComponent(mine.uuid)}`;
   disk.set(key, JSON.stringify({ version: 1, revision: 0, values: { playerBody: "Recover me" } }));
   await view.render();
@@ -265,7 +265,7 @@ test("switching from a recovered draft to a saved entry does not consume the rec
 test("editing another session preserves the current draft and uses the entry's origin session", async () => {
   const { view, mine } = setup();
   const previous = notebook("previous", "one", "", "oldSession");
-  previous.record.entries = [{ id: "past", title: "Past", text: "Earlier note", category: "general", source: "observed", updated: "" }];
+  previous.record.entries = [{ id: "past", title: "Past", text: "Earlier note", category: "general", updated: "" }];
   game.journal.push(previous);
   view.selectedSession = "session";
   await view.render();

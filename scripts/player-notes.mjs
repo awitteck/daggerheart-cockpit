@@ -1,7 +1,6 @@
 import { ID, publicHTML, escapeHTML } from "./model.mjs";
 
 export const BOOK_CATEGORIES = ["general", "person", "place", "clue", "agreement"];
-export const BOOK_SOURCES = ["observed", "reported", "theory"];
 
 export function validateNotebook(record) {
   if (!record || ![1, 2, 3].includes(record.version) || !Number.isSafeInteger(record.revision) || record.revision < 0 ||
@@ -12,7 +11,7 @@ export function validateNotebook(record) {
   if (record.version >= 2 && (!Array.isArray(record.entries) || record.entries.some(entry =>
     !entry || ["id", "title", "text", "updated"].some(key => typeof entry[key] !== "string") ||
     !/^[A-Za-z0-9_-]+$/.test(entry.id) || !entry.title.trim() || !entry.text.trim() ||
-    !BOOK_CATEGORIES.includes(entry.category) || !BOOK_SOURCES.includes(entry.source)
+    !BOOK_CATEGORIES.includes(entry.category)
   ) || new Set(record.entries.map(entry => entry.id)).size !== record.entries.length)) {
     throw new Error("Invalid campaign book entries. No data was changed.");
   }
@@ -46,11 +45,13 @@ export class PlayerNotesStore {
         while (record.entries.some(entry => entry.id === id)) id += "-old";
         record.entries.push({
           id, title: this.env.localize("generalSessionNote"), text: record.body,
-          category: "general", source: "reported", updated: ""
+          category: "general", updated: ""
         });
       }
       record.body = "";
     }
+    // Older entries may carry the removed "source" label; it is dropped on the next save.
+    for (const entry of record.entries) delete entry.source;
     return record;
   }
 
@@ -87,8 +88,7 @@ export class PlayerNotesStore {
   html(record) {
     return `<h2>${escapeHTML(record.authorName)}</h2>` +
       record.entries.map(entry => `<h3>${escapeHTML(entry.title)}</h3><p>${
-        escapeHTML(this.env.localize(`book_${entry.category}`))} · ${
-        escapeHTML(this.env.localize(`source_${entry.source}`))}</p>${publicHTML(entry.text)}`).join("") +
+        escapeHTML(this.env.localize(`book_${entry.category}`))}</p>${publicHTML(entry.text)}`).join("") +
       (!record.entries.length ? `<p>${escapeHTML(this.env.localize("noPlayerNotes"))}</p>` : "");
   }
 

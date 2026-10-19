@@ -20,9 +20,6 @@
         <label>{{localize "DHC.bookCategory"}}<select name="bookCategory" data-player-draft="bookCategory">
           {{#each categories}}<option value="{{key}}">{{label}}</option>{{/each}}
         </select></label>
-        <label>{{localize "DHC.bookSource"}}<select name="bookSource" data-player-draft="bookSource">
-          {{#each sources}}<option value="{{key}}">{{label}}</option>{{/each}}
-        </select></label>
         <label>{{localize "DHC.bookText"}}<textarea name="bookText" data-player-draft="bookText" rows="5"></textarea></label>
         <button type="button" data-action="bookSave">{{localize "DHC.bookSave"}}</button>
         <button type="button" data-action="bookNew">{{localize "DHC.bookNew"}}</button>
@@ -44,7 +41,7 @@
       <section><h3>{{label}}</h3>
         {{#each entries}}
           <details class="dhc-card">
-            <summary>{{title}} · {{sourceLabel}}</summary>
+            <summary>{{title}}</summary>
             <p class="dhc-hint">{{authorName}} · {{sessionName}}</p>
             <p class="dhc-text">{{text}}</p>
             {{#if editable}}

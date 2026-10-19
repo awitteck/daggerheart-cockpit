@@ -112,10 +112,10 @@ restoring the pre-upgrade world backup.
    game.modules.get("daggerheart-cockpit").api.openPlayerNotes();
    ```
 
-3. Select a session as the origin of new entries. Add a title, text, category
+3. Select a session as the origin of new entries. Add a title, text and category
    (**General session notes**, **People/NPCs**, **Places**, **Clues/theories**,
-   **Events/agreements**) and source
-   (**Observed**, **Reported**, **Theory**). Save the entry to share it with everyone.
+   **Events/agreements**). Note in the text itself where information came from
+   (seen, heard, guessed) if it matters. Save the entry to share it with everyone.
    **New entry** clears the editor after confirmation when needed. Your own saved
    entries have edit/delete buttons; deletion requires confirmation.
 4. The campaign book lists entries from **all enabled sessions**, grouped by
@@ -135,14 +135,16 @@ restoring the pre-upgrade world backup.
    the selected notebook's unsaved editor and any retained old free-text draft.
 7. The GM's **After the session** summary selection includes that session's
    saved entries, including general session notes. Select desired items, generate
-   the editable preview, then confirm publication. Category/source labels remain
-   visible in the selection; source and author are carried into the preview.
+   the editable preview, then confirm publication. Category labels remain
+   visible in the selection; author and title are carried into the preview.
    No entry is automatically promoted to an established campaign fact.
 
 The player view never reads private cockpit records. Notebooks contain only a
 public session name/id, author metadata and shared text. No Actors, Scenes or
 other documents are generated from entries. All entries are public to the group,
-not suitable for secrets. Source labels describe player knowledge, not GM truth.
+not suitable for secrets. Entries describe player knowledge, not GM truth.
+Entries saved with the former source label (Observed/Reported/Theory) remain
+readable; the label is no longer shown and is dropped on the notebook's next save.
 
 Each notebook has default **OBSERVER** ownership and **OWNER** only for its author.
 Foundry enforces access to other players' documents; GMs retain Foundry's normal

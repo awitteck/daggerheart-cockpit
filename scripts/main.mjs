@@ -218,7 +218,7 @@ class Cockpit extends HandlebarsApplicationMixin(ApplicationV2) {
         const notes = playerNotesStore.read(notebook);
         return notes.entries.map(entry => ({
           key: `${notebook.id}:${entry.id}`, authorName: notes.authorName, title: entry.title,
-          text: entry.text, source: t(`source_${entry.source}`), category: t(`book_${entry.category}`)
+          text: entry.text, category: t(`book_${entry.category}`)
         }));
       }) : [],
       stale: Boolean(draft && record && draft.revision !== record.revision)
@@ -565,7 +565,7 @@ class Cockpit extends HandlebarsApplicationMixin(ApplicationV2) {
       const notes = playerNotesStore.read(doc);
       const entry = notes.entries.find(entry => entry.id === entryId);
       if (!entry) throw new Error(t("missing"));
-      sections.push(`${notes.authorName} — ${entry.title} (${t(`source_${entry.source}`)})\n${entry.text}`);
+      sections.push(`${notes.authorName} — ${entry.title}\n${entry.text}`);
     }
     const text = sections.join("\n\n").trim();
     if (!text) throw new Error(t("selectSummary"));
