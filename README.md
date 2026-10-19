@@ -88,7 +88,7 @@ Refresh to discard the stale draft, then reapply it. Storage/quota/corrupt-draft
 errors are notified; corrupt drafts are not automatically overwritten. If local
 backup fails, closing with unsaved text asks for confirmation.
 
-Back up the world, replace the module directory with version **0.4.0**, restart
+Back up the world, replace the module directory with version **0.4.2**, restart
 Foundry and reload the browser. Existing 0.1.x and 0.2.x journal data is upgraded
 in memory when read and persisted as version 3 on its next successful save. New
 thread fields start empty; notes, links, events, spotlight, archives, highlights
